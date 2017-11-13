@@ -80,6 +80,7 @@ if [ "$DPDK" ]; then
 elif [ "$CC" != "clang" ]; then
     # DPDK headers currently trigger sparse errors
     # SPARSE_FLAGS="$SPARSE_FLAGS -Wsparse-error"
+    :
 fi
 
 configure_ovs $EXTRA_OPTS $*
