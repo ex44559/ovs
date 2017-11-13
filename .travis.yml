@@ -18,6 +18,7 @@ sudo: false
 
 env:
   - KERNEL=3.10.96
+  - TESTSUIT=1 
 
 
 script: ./.travis/build.sh $OPTS
