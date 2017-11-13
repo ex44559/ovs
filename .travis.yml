@@ -8,6 +8,7 @@ addons:
       - bc
       - gcc-multilib
       - libssl-dev
+      - llvm-dev
 
 before_install: ./.travis/prepare.sh
 
