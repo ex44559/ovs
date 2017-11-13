@@ -1,7 +1,6 @@
 language: c
 compiler:
   - gcc
-  - clang
 
 addons:
   apt:
@@ -11,7 +10,6 @@ addons:
       - libssl-dev
       - llvm-dev
 
-before_install: ./.travis/prepare.sh
 
 before_script: export PATH=$PATH:$HOME/bin
 
