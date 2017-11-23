@@ -32,7 +32,8 @@ enum lacp_status;
 enum bond_mode {
     BM_TCP, /* Transport Layer Load Balance. */
     BM_SLB, /* Source Load Balance. */
-    BM_AB   /* Active Backup. */
+    BM_AB,   /* Active Backup. */
+    BM_ASLB  /* improved version of SLB, added by sunbo*/
 };
 
 bool bond_mode_from_string(enum bond_mode *, const char *);

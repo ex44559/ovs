@@ -201,6 +201,8 @@ bond_mode_from_string(enum bond_mode *balance, const char *s)
         *balance = BM_SLB;
     } else if (!strcmp(s, bond_mode_to_string(BM_AB))) {
         *balance = BM_AB;
+    } else if (!strcmp(s, bond_mode_to_string(BM_ASLB))){
+		*balance = BM_ASLB;
     } else {
         return false;
     }
@@ -217,6 +219,8 @@ bond_mode_to_string(enum bond_mode balance) {
         return "balance-slb";
     case BM_AB:
         return "active-backup";
+	case BM_ASLB:
+		return "balance-aslb";
     }
     OVS_NOT_REACHED();
 }
@@ -701,7 +705,7 @@ static bool
 may_send_learning_packets(const struct bond *bond)
 {
     return ((bond->lacp_status == LACP_DISABLED
-        && (bond->balance == BM_SLB || bond->balance == BM_AB))
+        && (bond->balance == BM_SLB || bond->balance == BM_AB || bond->balance == BM_ASLB))
         || (bond->lacp_fallback_ab && bond->lacp_status == LACP_CONFIGURED))
         && bond->active_slave;
 }
@@ -838,6 +842,7 @@ bond_check_admissibility(struct bond *bond, const void *slave_,
         verdict = BV_ACCEPT;
         goto out;
 
+	case BM_ASLB:
     case BM_SLB:
         /* Drop all packets for which we have learned a different input port,
          * because we probably sent the packet on one slave and got it back on
@@ -980,7 +985,7 @@ static bool
 bond_is_balanced(const struct bond *bond) OVS_REQ_RDLOCK(rwlock)
 {
     return bond->rebalance_interval
-        && (bond->balance == BM_SLB || bond->balance == BM_TCP);
+        && (bond->balance == BM_SLB || bond->balance == BM_TCP || bond->balance == BM_ASLB);
 }
 
 /* Notifies 'bond' that 'n_bytes' bytes were sent in 'flow' within 'vlan'. */
@@ -1744,7 +1749,7 @@ bond_hash_tcp(const struct flow *flow, uint16_t vlan, uint32_t basis)
 static unsigned int
 bond_hash(const struct bond *bond, const struct flow *flow, uint16_t vlan)
 {
-    ovs_assert(bond->balance == BM_TCP || bond->balance == BM_SLB);
+    ovs_assert(bond->balance == BM_TCP || bond->balance == BM_SLB || bond->balance == BM_ASLB);
 
     return (bond->balance == BM_TCP
             ? bond_hash_tcp(flow, vlan, bond->basis)
@@ -1810,6 +1815,7 @@ choose_output_slave(const struct bond *bond, const struct flow *flow,
             flow_mask_hash_fields(flow, wc, NX_HASH_FIELDS_SYMMETRIC_L4);
         }
         /* Fall Through. */
+	case BM_ASLB:
     case BM_SLB:
         if (wc) {
             flow_mask_hash_fields(flow, wc, NX_HASH_FIELDS_ETH_SRC);

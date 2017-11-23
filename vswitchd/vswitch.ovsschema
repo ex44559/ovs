@@ -162,7 +162,7 @@
                   "min": 0, "max": 1}},
        "bond_mode": {
          "type": {"key": {"type": "string",
-           "enum": ["set", ["balance-tcp", "balance-slb", "active-backup"]]},
+           "enum": ["set", ["balance-tcp", "balance-slb", "active-backup", "balance-aslb"]]},
          "min": 0, "max": 1}},
        "lacp": {
          "type": {"key": {"type": "string",
