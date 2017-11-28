@@ -1179,7 +1179,7 @@ bond_rebalance(struct bond *bond)
         }
     }
 
-	if (bond->balance = BM_ASLB) {
+	if (bond->balance == BM_ASLB) {
 		//TODO: implement ASLB rebalance here.
 		VLOG_INFO("enter ASLB mode rebalance.");
 	}
@@ -1738,16 +1738,16 @@ bond_hash_src(const struct eth_addr mac, uint16_t vlan, uint32_t basis)
 {
     return hash_mac(mac, vlan, basis);
 }
-
+/*
 static unsigned int
-bond_hash_aslb(const struct eth_addr mac, const struct *flow, uint16_t vlan, uint32_t basis)
+bond_hash_aslb(const struct eth_addr mac, const struct flow *flow, uint16_t vlan, uint32_t basis)
 {
 	struct flow hash_flow = *flow;
 	hash_flow.vlan_tci = htons(vlan);
 	//TODO: implement hash function to support aslb features.
 	return 0;
 }
-
+*/
 static unsigned int
 bond_hash_tcp(const struct flow *flow, uint16_t vlan, uint32_t basis)
 {
