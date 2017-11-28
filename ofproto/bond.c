@@ -49,6 +49,12 @@
 #include "unixctl.h"
 #include "openvswitch/vlog.h"
 
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <linux/ethtool.h>
+#include <string.h>
+
 VLOG_DEFINE_THIS_MODULE(bond);
 
 static struct ovs_rwlock rwlock = OVS_RWLOCK_INITIALIZER;
@@ -97,6 +103,8 @@ struct bond_slave {
     struct ovs_list bal_node;   /* In bond_rebalance()'s 'bals' list. */
     struct ovs_list entries;    /* 'struct bond_entry's assigned here. */
     uint64_t tx_bytes;          /* Sum across 'tx_bytes' of entries. */
+
+    uint64_t speed;             /* dev speed. uesd by aslb. */
 };
 
 /* A bond, that is, a set of network devices grouped to improve performance or
@@ -1138,12 +1146,86 @@ reinsert_bal(struct ovs_list *bals, struct bond_slave *slave)
     insert_bal(bals, slave);
 }
 
+int 
+aslb_nic_investigation(struct bond_slave *slave) 
+{
+	int sock;
+	struct ifreq ifr; /* this data structure defined in if.h */
+	struct ethtool_cmd edata; /* this defined in ethtool.h */
+	int rc;
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		VLOG_ERR("ofproto ioctl_ethtool aslb socket err\n");
+		return -1;
+	}
+
+	/* TODO improve this: devname is unnecessary. */
+	memset(&ifr, 0, sizeof(ifr));
+	strcpy(ifr.ifr_name, slave->name);
+
+	ifr.ifr_data = (char *)&edata;
+	edata.cmd = ETHTOOL_GSET;
+	/* get netdev speed info */
+	rc = ioctl(sock, SIOCETHTOOL, &ifr);
+	if (rc < 0) {
+		VLOG_ERR("ofproto ioctl_ethtool aslb ioctl err\n");
+		return -1;
+	}
+
+	/* obtain netdevspeed. */
+	switch(ethtool_cmd_speed(&edata)) {
+		case SPEED_10:
+			slave->speed = 10;
+			break;
+		case SPEED_100:
+			slave->speed = 100;
+			break;
+		case SPEED_1000:
+			slave->speed = 1000;
+			break;
+		case SPEED_2500:
+			slave->speed = 2500;
+			break;
+		case SPEED_10000:
+			slave->speed = 10000;
+			break;
+		case SPEED_40000:
+			slave->speed = 40000;
+			break;
+
+		default:
+			slave->speed = 0;
+	}
+
+	return 0;
+}
+
+static void
+aslb_insert_bal(struct ovs_list *bals, struct bond_slave *slave)
+{
+	struct bond_slave *pos;
+	LIST_FOR_EACH(pos, bal_node, bals) {
+		if ((slave->tx_bytes / slave->speed) > (pos->tx_bytes / pos->speed)) {
+			break;
+		}
+	}
+	list_insert(&pos->bal_node, &slave->bal_node);
+}
+
+static void
+aslb_reinsert_bal(struct ovs_list *bals, struct bond_slave *slave)
+{
+    list_remove(&slave->bal_node);
+    aslb_insert_bal(bals, slave);
+}
 /* If 'bond' needs rebalancing, does so.
  *
  * The caller should have called bond_account() for each active flow, or in case
  * of recirculation is used, have called bond_recirculation_account(bond),
  * to ensure that flow data is consistently accounted at this point.
  */
+ /*this function is called by 10 seconds.*/
 void
 bond_rebalance(struct bond *bond)
 {
@@ -1179,22 +1261,28 @@ bond_rebalance(struct bond *bond)
         }
     }
 
-	if (bond->balance == BM_ASLB) {
-		//TODO: implement ASLB rebalance here.
-		VLOG_INFO("enter ASLB mode rebalance.");
-	}
-	
     /* Add enabled slaves to 'bals' in descending order of tx_bytes.
      *
      * XXX This is O(n**2) in the number of slaves but it could be O(n lg n)
      * with a proper list sort algorithm. */
-    list_init(&bals);
-    HMAP_FOR_EACH (slave, hmap_node, &bond->slaves) {
-        if (slave->enabled) {
-            insert_bal(&bals, slave);
-        }
-    }
-    log_bals(bond, &bals);
+	if (bond->balance == BM_ASLB) {
+		list_init(&bals);
+		HMAPX_FOR_EACH(slave, hmap_node, &bond->slaves) {
+			if (slave->enabled) {
+				aslb_nic_investigation(slave);
+				aslb_insert_bal(&bals, slave);
+			}
+		}
+		log_bals(bond, &bals);
+	} else { 
+	    list_init(&bals);
+	    HMAP_FOR_EACH (slave, hmap_node, &bond->slaves) {
+	        if (slave->enabled) {
+	            insert_bal(&bals, slave);
+	        }
+	    }
+	    log_bals(bond, &bals);
+	}
 
     /* Shift load from the most-loaded slaves to the least-loaded slaves. */
     while (!list_is_short(&bals)) {
@@ -1203,7 +1291,7 @@ bond_rebalance(struct bond *bond)
         uint64_t overload;
 
         overload = from->tx_bytes - to->tx_bytes;
-        if (overload < to->tx_bytes >> 5 || overload < 100000) {
+        if (bond->balance == BM_SLB && (overload < to->tx_bytes >> 5 || overload < 100000)) {
             /* The extra load on 'from' (and all less-loaded slaves), compared
              * to that of 'to' (the least-loaded slave), is less than ~3%, or
              * it is less than ~1Mbps.  No point in rebalancing. */
@@ -1224,8 +1312,13 @@ bond_rebalance(struct bond *bond)
             list_remove(&e->list_node);
 
             /* Re-sort 'bals'. */
-            reinsert_bal(&bals, from);
-            reinsert_bal(&bals, to);
+			if (bond->balance == BM_SLB) {
+            	reinsert_bal(&bals, from);
+            	reinsert_bal(&bals, to);
+			} else if (bond->balance == BM_ASLB) {
+				aslb_reinsert_bal(&bals, from);
+				aslb_reinsert_bal(&bals, to);
+			}
             rebalanced = true;
         } else {
             /* Can't usefully migrate anything away from 'from'.
@@ -1233,7 +1326,7 @@ bond_rebalance(struct bond *bond)
             list_remove(&from->bal_node);
         }
     }
-
+aslb_done:
     /* Implement exponentially weighted moving average.  A weight of 1/2 causes
      * historical data to decay to <1% in 7 rebalancing runs.  1,000,000 bytes
      * take 20 rebalancing runs to decay to 0 and get deleted entirely. */
@@ -1746,7 +1839,6 @@ bond_hash_aslb(const struct flow *flow, uint16_t vlan, uint32_t basis)
 	hash_flow.vlan_tci = htons(vlan);
 
 	return flow_hash_symmetric_l4(&hash_flow, basis);
-	return 0;
 }
 
 static unsigned int
