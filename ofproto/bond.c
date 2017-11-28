@@ -1267,7 +1267,7 @@ bond_rebalance(struct bond *bond)
      * with a proper list sort algorithm. */
 	if (bond->balance == BM_ASLB) {
 		list_init(&bals);
-		HMAPX_FOR_EACH(slave, hmap_node, &bond->slaves) {
+		HMAP_FOR_EACH(slave, hmap_node, &bond->slaves) {
 			if (slave->enabled) {
 				aslb_nic_investigation(slave);
 				aslb_insert_bal(&bals, slave);
