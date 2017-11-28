@@ -104,6 +104,8 @@ void bond_account(struct bond *, const struct flow *, uint16_t vlan,
                   uint64_t n_bytes);
 void bond_rebalance(struct bond *);
 
+int aslb_nic_investigation(struct bond_slave *slave);
+
 /* Recirculation
  *
  * Only balance_tcp mode uses recirculation.

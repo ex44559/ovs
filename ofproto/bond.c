@@ -54,6 +54,7 @@
 #include <net/if.h>
 #include <linux/ethtool.h>
 #include <string.h>
+#include <linux/sockios.h>
 
 VLOG_DEFINE_THIS_MODULE(bond);
 
@@ -1326,7 +1327,7 @@ bond_rebalance(struct bond *bond)
             list_remove(&from->bal_node);
         }
     }
-aslb_done:
+
     /* Implement exponentially weighted moving average.  A weight of 1/2 causes
      * historical data to decay to <1% in 7 rebalancing runs.  1,000,000 bytes
      * take 20 rebalancing runs to decay to 0 and get deleted entirely. */
