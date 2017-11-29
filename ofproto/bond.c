@@ -1200,7 +1200,7 @@ aslb_nic_investigation(struct bond_slave *slave)
 		default:
 			slave->speed = 0;
 	}
-	VLOG_INFO("devname %s speed is %d", slave->name, (int)slave->speed);
+	//VLOG_INFO("devname %s speed is %d", slave->name, (int)slave->speed);
 	return 0;
 }
 
