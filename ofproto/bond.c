@@ -67,6 +67,12 @@ static struct hmap *const all_bonds OVS_GUARDED_BY(rwlock) = &all_bonds__;
 #define BOND_MASK 0xff
 #define BOND_BUCKETS (BOND_MASK + 1)
 
+enum bond_entry_type {
+	none,
+	mice,
+	elephant,
+};
+
 /* A hash bucket for mapping a flow to a slave.
  * "struct bond" has an array of BOND_BUCKETS of these. */
 struct bond_entry {
@@ -82,6 +88,7 @@ struct bond_entry {
      * is used to determine delta (applied to 'tx_bytes' above.) */
     struct rule *pr_rule;
     uint64_t pr_tx_bytes OVS_GUARDED_BY(rwlock);
+	enum bond_entry_type type;
 };
 
 /* A bond slave, that is, one of the links comprising a bond. */
