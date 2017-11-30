@@ -55,6 +55,7 @@
 #include <linux/ethtool.h>
 #include <string.h>
 #include <linux/sockios.h>
+#include <unistd.h>
 
 VLOG_DEFINE_THIS_MODULE(bond);
 
