@@ -564,6 +564,7 @@ bond_slave_register(struct bond *bond, void *slave_,
         slave->ofp_port = ofport;
         slave->delay_expires = LLONG_MAX;
         slave->name = xstrdup(netdev_get_name(netdev));
+		slave->speed = 0;
         bond->bond_revalidate = true;
 
         slave->enabled = false;
@@ -1201,6 +1202,7 @@ aslb_nic_investigation(struct bond_slave *slave)
 			slave->speed = 0;
 	}
 	//VLOG_INFO("devname %s speed is %d", slave->name, (int)slave->speed);
+	close(sock);
 	return 0;
 }
 
@@ -1209,7 +1211,7 @@ aslb_insert_bal(struct ovs_list *bals, struct bond_slave *slave)
 {
 	struct bond_slave *pos;
 	LIST_FOR_EACH(pos, bal_node, bals) {
-		if ((slave->tx_bytes / slave->speed) > (pos->tx_bytes / pos->speed)) {
+		if ((slave->tx_bytes / (slave->speed + 1)) > (pos->tx_bytes / (pos->speed + 1))) {
 			break;
 		}
 	}
