@@ -206,8 +206,7 @@ static struct bond_slave *choose_output_slave(const struct bond *,
     OVS_REQ_RDLOCK(rwlock);
 static void update_recirc_rules__(struct bond *bond);
 int aslb_nic_investigation(struct bond_slave *slave);
-static struct bond_entry *aslb_choose_entry_to_migrate(const struct bond_slave *from, 
-														uint64_t to_tx_bytes)
+static struct bond_entry *aslb_choose_entry_to_migrate(const struct bond_slave *from)
 	OVS_REQ_WRLOCK(rwlock); 
 
 
@@ -1349,7 +1348,7 @@ bond_rebalance(struct bond *bond)
         /* 'from' is carrying significantly more load than 'to'.  Pick a hash
          * to move from 'from' to 'to'. */
         if(bond->balance == BM_ASLB) {
-			e = aslb_choose_entry_to_migrate(from, to->tx_bytes);
+			e = aslb_choose_entry_to_migrate(from);
         } else {
         	e = choose_entry_to_migrate(from, to->tx_bytes);
         }
