@@ -206,6 +206,10 @@ static struct bond_slave *choose_output_slave(const struct bond *,
     OVS_REQ_RDLOCK(rwlock);
 static void update_recirc_rules__(struct bond *bond);
 int aslb_nic_investigation(struct bond_slave *slave);
+static struct bond_entry *aslb_choose_entry_to_migrate(const struct bond_slave *from, 
+														uint64_t to_tx_bytes)
+	OVS_REQ_WRLOCK(rwlock); 
+
 
 
 /* Attempts to parse 's' as the name of a bond balancing mode.  If successful,
@@ -1134,6 +1138,33 @@ choose_entry_to_migrate(const struct bond_slave *from, uint64_t to_tx_bytes)
     return NULL;
 }
 
+static struct bond_entry *
+aslb_choose_entry_to_migrate(const struct bond_slave *from, uint64_t to_tx_bytes) 
+	OVS_REQ_WRLOCK(rwlock)
+{
+	struct bond_entry *e;
+	uint64_t sum = 0, count = 0;
+	uint64_t threshold = 0;
+
+	if (list_is_short(&from->entries)) {
+		return NULL;
+	}
+
+	LIST_FOR_EACH(e, list_node, &from->entries) {
+		sum += e->tx_bytes;
+		count++;
+	}
+
+	threshold = sum / count;
+
+	LIST_FOR_EACH(e, list_node, &from->entries) {
+		if (e->tx_bytes < threshold) {
+			return e;
+		}
+	} 
+	
+	return NULL;
+}
 /* Inserts 'slave' into 'bals' so that descending order of 'tx_bytes' is
  * maintained. */
 static void
@@ -1310,10 +1341,19 @@ bond_rebalance(struct bond *bond)
              * it is less than ~1Mbps.  No point in rebalancing. */
             break;
         }
+		/* Conditions for not ASLB balancing. Maybe need tuned. */
+		if (bond->balance == BM_ASLB && (overload < to->tx_bytes >> 5 || overload < 100000)) {
+			break;
+		}
 
         /* 'from' is carrying significantly more load than 'to'.  Pick a hash
          * to move from 'from' to 'to'. */
-        e = choose_entry_to_migrate(from, to->tx_bytes);
+        if(bond->balance == BM_ASLB) {
+			e = aslb_choose_entry_to_migrate(from, to->tx_bytes);
+        } else {
+        	e = choose_entry_to_migrate(from, to->tx_bytes);
+        }
+		
         if (e) {
             bond_shift_load(e, to);
 
