@@ -1139,7 +1139,7 @@ choose_entry_to_migrate(const struct bond_slave *from, uint64_t to_tx_bytes)
 }
 
 static struct bond_entry *
-aslb_choose_entry_to_migrate(const struct bond_slave *from, uint64_t to_tx_bytes) 
+aslb_choose_entry_to_migrate(const struct bond_slave *from) 
 	OVS_REQ_WRLOCK(rwlock)
 {
 	struct bond_entry *e;
