@@ -247,7 +247,6 @@ bond_mode_to_string(enum bond_mode balance) {
     OVS_NOT_REACHED();
 }
 
-
 /* Creates and returns a new bond whose configuration is initially taken from
  * 's'.
  *
@@ -721,7 +720,7 @@ bond_wait(struct bond *bond)
      * schedule and bond_rebalance() gets called afterward, so we'd just be
      * waking up for no purpose. */
 }
-
+
 /* MAC learning table interaction. */
 
 static bool
@@ -785,7 +784,7 @@ bond_compose_learning_packet(struct bond *bond, const struct eth_addr eth_src,
     ovs_rwlock_unlock(&rwlock);
     return packet;
 }
-
+
 /* Checks whether a packet that arrived on 'slave_' within 'bond', with an
  * Ethernet destination address of 'eth_dst', should be admitted.
  *
@@ -912,7 +911,7 @@ bond_choose_output_slave(struct bond *bond, const struct flow *flow,
 
     return aux;
 }
-
+
 /* Recirculation. */
 static void
 bond_entry_account(struct bond_entry *entry, uint64_t rule_tx_bytes)
@@ -1946,6 +1945,44 @@ get_enabled_slave(struct bond *bond)
 }
 
 static struct bond_slave *
+aslb_get_enabled_slave(struct bond *bond)
+{
+	struct ovs_list *node;
+	struct bond_slave *s;
+	uint64_t max_speed = 0;
+	
+	ovs_mutex_lock(&bond->mutex);
+	if (list_is_empty(&bond->enabled_slaves)) {
+		ovs_mutex_unlock(&bond->mutex);
+		return NULL;
+	}
+
+	//TODO: add choose enable slave logic here.
+	LIST_FOR_EACH(s, list_node, &bond->enabled_slaves) {
+		if (s->speed == 0) {
+			aslb_nic_investigation(s);
+		}
+
+		if (s->speed > max_speed) {
+			max_speed = s->speed;
+		}
+	}
+
+	LIST_FOR_EACH(s, list_node, &bond->enabled_slaves) {
+		if (s->speed == max_speed) {
+			ovs_mutex_unlock(&bond->mutex);
+			return s;
+		}
+	}
+	
+	node = list_pop_front(&bond->enabled_slaves);
+    list_push_back(&bond->enabled_slaves, node);
+    ovs_mutex_unlock(&bond->mutex);
+
+    return CONTAINER_OF(node, struct bond_slave, list_node);
+}
+
+static struct bond_slave *
 choose_output_slave(const struct bond *bond, const struct flow *flow,
                     struct flow_wildcards *wc, uint16_t vlan)
 {
@@ -1977,6 +2014,14 @@ choose_output_slave(const struct bond *bond, const struct flow *flow,
         }
         /* Fall Through. */
 	case BM_ASLB:
+		if (wc) {
+            flow_mask_hash_fields(flow, wc, NX_HASH_FIELDS_ETH_SRC);
+        }
+		e = lookup_bond_entry(bond, flow, vlan);
+		if (!e->slave || !e->slave->enabled) {
+			e->slave = aslb_get_enabled_slave(CONST_CAST(struct bond*, bond));
+		}
+		return e->slave;
     case BM_SLB:
         if (wc) {
             flow_mask_hash_fields(flow, wc, NX_HASH_FIELDS_ETH_SRC);
