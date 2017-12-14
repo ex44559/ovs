@@ -1392,7 +1392,7 @@ bond_rebalance(struct bond *bond)
 done:
     ovs_rwlock_unlock(&rwlock);
 }
-
+
 /* Bonding unixctl user interface functions. */
 
 static struct bond *
@@ -2021,6 +2021,7 @@ choose_output_slave(const struct bond *bond, const struct flow *flow,
 		if (!e->slave || !e->slave->enabled) {
 			e->slave = aslb_get_enabled_slave(CONST_CAST(struct bond*, bond));
 		}
+		VLOG_INFO("aslb choose output slave name is %s", e->slave->name);
 		return e->slave;
     case BM_SLB:
         if (wc) {
