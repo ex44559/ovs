@@ -181,7 +181,6 @@ get_numa_by_numa_id(int numa_id)
     return numa;
 }
 
-
 /* Extracts the numa node and core info from the 'sysfs'. */
 void
 ovs_numa_init(void)

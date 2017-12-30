@@ -1000,7 +1000,6 @@ bond_update_post_recirc_rules(struct bond *bond, uint32_t *recirc_id,
     ovs_rwlock_unlock(&rwlock);
 }
 
-
 /* Rebalancing. */
 
 static bool
@@ -1311,7 +1310,9 @@ bond_rebalance(struct bond *bond)
 		list_init(&bals);
 		HMAP_FOR_EACH(slave, hmap_node, &bond->slaves) {
 			if (slave->enabled) {
-				aslb_nic_investigation(slave);
+				if (slave->speed == 0) {
+					aslb_nic_investigation(slave);
+				}
 				aslb_insert_bal(&bals, slave);
 			}
 		}
@@ -1970,6 +1971,8 @@ aslb_get_enabled_slave(struct bond *bond)
 
 	LIST_FOR_EACH(s, list_node, &bond->enabled_slaves) {
 		if (s->speed == max_speed) {
+			list_remove(&s->list_node);
+			list_push_back(&bond->enabled_slaves, &s->list_node);
 			ovs_mutex_unlock(&bond->mutex);
 			return s;
 		}
