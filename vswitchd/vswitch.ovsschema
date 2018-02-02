@@ -1,6 +1,6 @@
 {"name": "Open_vSwitch",
  "version": "7.12.1",
- "cksum": "169806772 22551",
+ "cksum": "4054361509 22644",
  "tables": {
    "Open_vSwitch": {
      "columns": {
@@ -607,4 +607,8 @@
                   "value": {"type": "integer",
                           "minInteger": 0,
                           "maxInteger": 4095},
-                  "min": 0, "max": "unlimited"}}}}}}
+                  "min": 0, "max": "unlimited"}}}},
+   "HardwareInfo": {
+     "columns": {
+       "NumaNodeNum": {
+         "type": "string"}}}}}

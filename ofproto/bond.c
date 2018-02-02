@@ -1786,7 +1786,7 @@ bond_init(void)
     unixctl_command_register("bond/hash", "mac [vlan] [basis]", 1, 3,
                              bond_unixctl_hash, NULL);
 }
-
+
 static void
 bond_entry_reset(struct bond *bond)
 {
