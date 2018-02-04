@@ -213,6 +213,7 @@ ovsdb_idl_create(const char *remote, const struct ovsdb_idl_class *class,
 
     idl = xzalloc(sizeof *idl);
     idl->class = class;
+	ovs_assert(idl->class);
     idl->session = jsonrpc_session_open(remote, retry);
     shash_init(&idl->table_by_name);
     idl->tables = xmalloc(class->n_tables * sizeof *idl->tables);
@@ -1404,7 +1405,11 @@ may_add_arc(const struct ovsdb_idl_row *src, const struct ovsdb_idl_row *dst)
 static struct ovsdb_idl_table *
 ovsdb_idl_table_from_class(const struct ovsdb_idl *idl,
                            const struct ovsdb_idl_table_class *table_class)
-{
+{	
+	ovs_assert(table_class);
+	ovs_assert(idl->class);
+	ovs_assert(idl->class->tables);
+	ovs_assert(idl->tables);
     return &idl->tables[table_class - idl->class->tables];
 }
 
@@ -1636,6 +1641,9 @@ ovsdb_idl_txn_create(struct ovsdb_idl *idl)
     txn->inc_column = NULL;
 
     hmap_init(&txn->inserted_rows);
+
+	ovs_assert(idl == txn->idl);
+	ovs_assert(idl->class == txn->idl->class);
 
     return txn;
 }
@@ -2454,6 +2462,9 @@ ovsdb_idl_txn_insert(struct ovsdb_idl_txn *txn,
         uuid_generate(&row->uuid);
     }
 
+	ovs_assert(txn->idl);
+	ovs_assert(class);
+	ovs_assert(txn->idl->class);
     row->table = ovsdb_idl_table_from_class(txn->idl, class);
     row->new = xmalloc(class->n_columns * sizeof *row->new);
     hmap_insert(&row->table->rows, &row->hmap_node, uuid_hash(&row->uuid));

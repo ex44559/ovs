@@ -49,6 +49,7 @@
 #include "openvswitch/vlog.h"
 #include "lib/vswitch-idl.h"
 #include "lib/netdev-dpdk.h"
+#include "ovs-numa.h"
 
 VLOG_DEFINE_THIS_MODULE(vswitchd);
 
@@ -104,6 +105,7 @@ main(int argc, char *argv[])
     unixctl_command_register("exit", "", 0, 0, ovs_vswitchd_exit, &exiting);
 
     bridge_init(remote);
+	ovs_numa_info_init(remote);
     free(remote);
 
     exiting = false;
@@ -117,7 +119,9 @@ main(int argc, char *argv[])
             memory_report(&usage);
             simap_destroy(&usage);
         }
+		
         bridge_run();
+		ovs_numa_info_run();
         unixctl_server_run(unixctl);
         netdev_run();
 

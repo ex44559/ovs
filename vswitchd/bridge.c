@@ -379,7 +379,7 @@ bridge_init_ofproto(const struct ovsrec_open_vswitch *cfg)
     }
 
     ofproto_init(&iface_hints);
-
+	VLOG_INFO("Bridge init open vswitch table.");
     shash_destroy_free_data(&iface_hints);
     initialized = true;
 }
@@ -490,6 +490,7 @@ bridge_init(const char *remote)
     ovsdb_idl_omit(idl, &ovsrec_manager_col_status);
 
     ovsdb_idl_omit(idl, &ovsrec_ssl_col_external_ids);
+	ovsdb_idl_omit_alert(idl, &ovsrec_hardwareinfo_col_NumaNodeNum);
 
     /* Register unixctl commands. */
     unixctl_command_register("qos/show", "interface", 1, 1,
@@ -3013,6 +3014,7 @@ bridge_run(void)
             status_txn_try_again = true;
             ovsdb_idl_txn_commit(txn);
             ovsdb_idl_txn_destroy(txn);
+			VLOG_INFO("bridge run: IDL number is %d", ovsdb_idl_get_seqno(idl));
         } else {
             initial_config_done = true;
             daemonize_txn = txn;
@@ -3030,6 +3032,7 @@ bridge_run(void)
             daemonize_complete();
 
             vlog_enable_async();
+			VLOG_INFO("bridge run: IDL number is %d", ovsdb_idl_get_seqno(idl));
 
             VLOG_INFO_ONCE("%s (Open vSwitch) %s", program_name, VERSION);
         }
@@ -5130,6 +5133,7 @@ discover_types(const struct ovsrec_open_vswitch *cfg)
     netdev_enumerate_types(&types);
     const char **iface_types = sset_array(&types);
     ovsrec_open_vswitch_set_iface_types(cfg, iface_types, sset_count(&types));
+	VLOG_INFO("table open vswitch: set iface types.");
     free(iface_types);
     sset_destroy(&types);
 }

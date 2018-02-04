@@ -33,6 +33,10 @@
 #include "list.h"
 #include "ovs-thread.h"
 #include "openvswitch/vlog.h"
+#include "connectivity.h"
+#include "ovsdb-idl.h"
+#include "vswitch-idl.h"
+
 
 VLOG_DEFINE_THIS_MODULE(ovs_numa);
 
@@ -448,6 +452,78 @@ ovs_numa_set_cpu_mask(const char *cmask)
                             struct cpu_core, hmap_node);
         core->available = false;
     }
+}
+
+struct ovsdb_idl *idl;
+unsigned int last_success_seqno;
+bool try_again = false;
+
+void 
+ovs_numa_info_init(const char *remote) 
+{	
+	idl = ovsdb_idl_create(remote, &ovsrec_idl_class, false, true);
+	last_success_seqno = ovsdb_idl_get_seqno(idl);
+	ovsdb_idl_add_table(idl, &ovsrec_table_hardwareinfo);
+	ovsdb_idl_add_column(idl, &ovsrec_hardwareinfo_col_NumaNodeNum);
+	ovsdb_idl_set_lock(idl, "hardware_info");
+}
+
+void
+ovs_numa_info_run(void) 
+{
+	ovsdb_idl_run(idl);
+	
+	if (try_again) {
+		goto trying;
+	}
+	if (!ovsdb_idl_has_lock(idl) || 
+			ovsdb_idl_is_lock_contended(idl) || 
+			!ovsdb_idl_has_ever_connected(idl)) {
+			return;
+	}
+
+trying:;
+	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
+	VLOG_INFO("IDL seqno is %d", idl_seq);
+	if (idl_seq != last_success_seqno) {
+		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
+		const struct ovsrec_hardwareinfo *first_hardware_info;
+		struct ovsrec_hardwareinfo *hardware_info;
+		enum ovsdb_idl_txn_status status;
+		int64_t numanodenum = (int64_t)hmap_count(&all_numa_nodes);
+				
+		first_hardware_info = ovsrec_hardwareinfo_first(idl);
+		if (!first_hardware_info) {
+			hardware_info = ovsrec_hardwareinfo_insert(txn);
+			VLOG_INFO("try to insert a row");
+		}
+		VLOG_INFO("numa node number is %" PRId64 "\n", numanodenum);
+		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
+		ovsrec_hardwareinfo_set_NumaNodeNum(hardware_info, numanodenum);
+		status = ovsdb_idl_txn_commit_block(txn);
+		VLOG_INFO("set hardware_info numa node number");
+		
+		if (status != TXN_INCOMPLETE) {	
+			VLOG_INFO("txn is not incomplete.");
+			ovsdb_idl_txn_destroy(txn);
+			if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
+				if (status == TXN_SUCCESS) {
+					VLOG_INFO("txn success!");
+					last_success_seqno = ovsdb_idl_get_seqno(idl);
+					VLOG_INFO("New success IDL seqno is %d", idl_seq);
+					const struct ovsrec_hardwareinfo *new_hardware_info;
+					new_hardware_info = ovsrec_hardwareinfo_first(idl);
+					if (new_hardware_info) {
+						VLOG_INFO("numa node num of idl is %" PRId64 "\n", new_hardware_info->NumaNodeNum);
+					} else {
+						VLOG_INFO("no new row");
+					}
+				}
+			} else {
+					VLOG_WARN("failed: set hardware_info numa node number.");
+			   }
+		}
+	}
 }
 
 #endif /* __linux__ */

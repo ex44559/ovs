@@ -254,6 +254,14 @@ const struct ovsdb_idl_row *ovsdb_idl_txn_insert(
 
 struct ovsdb_idl *ovsdb_idl_txn_get_idl (struct ovsdb_idl_txn *);
 void ovsdb_idl_get_initial_snapshot(struct ovsdb_idl *);
+
+void ovsdb_txn_add_column(struct ovsdb_idl_txn *txn, 
+							const struct ovsdb_idl_column *column);
+void
+ovsdb_txn_add_table(struct ovsdb_idl_txn *txn, 
+							const struct ovsdb_idl_table_class *tc);
+
+
 
 
 /* ovsdb_idl_loop provides an easy way to manage the transactions related

@@ -1,6 +1,6 @@
 {"name": "Open_vSwitch",
  "version": "7.12.1",
- "cksum": "4054361509 22644",
+ "cksum": "521790343 22664",
  "tables": {
    "Open_vSwitch": {
      "columns": {
@@ -611,4 +611,5 @@
    "HardwareInfo": {
      "columns": {
        "NumaNodeNum": {
-         "type": "string"}}}}}
+         "type": "integer"}},
+     "isRoot":true}}}
