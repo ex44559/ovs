@@ -492,15 +492,13 @@ trying:;
 		int64_t numanodenum = (int64_t)hmap_count(&all_numa_nodes);
 				
 		first_hardware_info = ovsrec_hardwareinfo_first(idl);
-		if (!first_hardware_info) {
-			struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
-			hardware_info = ovsrec_hardwareinfo_insert(txn);
-			VLOG_INFO("try to insert a row");
-		} else {
+		if (first_hardware_info) {
 			VLOG_INFO("HardwareInfo already has a row.");
 			return;
-		}
-		
+		} 
+		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
+		hardware_info = ovsrec_hardwareinfo_insert(txn);
+		VLOG_INFO("try to insert a row");
 		VLOG_INFO("numa node number is %" PRId64 "\n", numanodenum);
 		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
 		ovsrec_hardwareinfo_set_NumaNodeNum(hardware_info, numanodenum);
