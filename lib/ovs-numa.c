@@ -485,8 +485,7 @@ ovs_numa_info_run(void)
 trying:;
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("IDL seqno is %d", idl_seq);
-	if (idl_seq != last_success_seqno) {
-		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
+	if (idl_seq != last_success_seqno) {		
 		const struct ovsrec_hardwareinfo *first_hardware_info;
 		struct ovsrec_hardwareinfo *hardware_info;
 		enum ovsdb_idl_txn_status status;
@@ -496,7 +495,11 @@ trying:;
 		if (!first_hardware_info) {
 			hardware_info = ovsrec_hardwareinfo_insert(txn);
 			VLOG_INFO("try to insert a row");
+		} else {
+			VLOG_INFO("HardwareInfo already has a row.");
+			return;
 		}
+		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
 		VLOG_INFO("numa node number is %" PRId64 "\n", numanodenum);
 		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
 		ovsrec_hardwareinfo_set_NumaNodeNum(hardware_info, numanodenum);
