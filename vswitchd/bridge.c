@@ -3014,7 +3014,6 @@ bridge_run(void)
             status_txn_try_again = true;
             ovsdb_idl_txn_commit(txn);
             ovsdb_idl_txn_destroy(txn);
-			VLOG_INFO("bridge run: IDL number is %d", ovsdb_idl_get_seqno(idl));
         } else {
             initial_config_done = true;
             daemonize_txn = txn;
@@ -3032,7 +3031,6 @@ bridge_run(void)
             daemonize_complete();
 
             vlog_enable_async();
-			VLOG_INFO("bridge run: IDL number is %d", ovsdb_idl_get_seqno(idl));
 
             VLOG_INFO_ONCE("%s (Open vSwitch) %s", program_name, VERSION);
         }
