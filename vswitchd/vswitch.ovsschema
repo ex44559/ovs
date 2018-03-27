@@ -1,6 +1,6 @@
 {"name": "Open_vSwitch",
  "version": "7.12.1",
- "cksum": "521790343 22664",
+ "cksum": "2456243192 24617",
  "tables": {
    "Open_vSwitch": {
      "columns": {
@@ -611,5 +611,54 @@
    "HardwareInfo": {
      "columns": {
        "NumaNodeNum": {
-         "type": "integer"}},
-     "isRoot":true}}}
+         "type": "integer"},
+       "CPUPerNumaNode":{
+         "type": "integer"},
+       "CorePerNumaNode": {
+         "type": "integer"},
+       "MemoryPerNumaNode":{
+         "type": "integer"},
+       "CPUType": {
+         "type": "string"}},
+     "isRoot":true},
+   "NetdevInfo" : {
+     "columns" : {
+       "ports": {
+         "type": {"key": {"type": "uuid",
+                          "refTable": "Port"},
+                  "min": 0, "max": "unlimited"}},
+       "NumaNode": {
+         "type": "integer"},
+       "Speed": {
+         "type": "string"},
+       "Type": {
+         "type": "string"},
+       "Driver": {
+         "type": "string"},
+       "IsUserSpace": {
+         "type": "boolean"}},
+     "isRoot" : true},
+   "IssuedConfig":{
+     "columns": {
+       "IsFallbackMode": {
+         "type": "boolean"},
+       "IsUserConfigMode": {
+         "type": "boolean"},
+       "ProcessToNode": {
+         "type": "integer"},
+       "isAlbMode": {
+         "type": "boolean"},
+       "configChanged": {
+         "type": "boolean"}},
+     "isRoot": true},
+   "dataReport": {
+     "columns": {
+       "setProcessSuccess": {
+         "type": "boolean"},
+       "isAlbMode": {
+         "type": "boolean"},
+       "ConfigError": {
+         "type": "boolean"},
+       "ErrorMessage": {
+         "type": "string"}},
+     "isRoot": true}}}

@@ -4728,5 +4728,80 @@
     <column name="NumaNodeNum">
       number of numa nodes in system
     </column>
+    <column name="CPUPerNumaNode">
+      p
+    </column>
+    <column name="CorePerNumaNode">
+      p
+    </column>
+    <column name="MemoryPerNumaNode">
+      p
+    </column>
+    <column name="CPUType">
+      p
+    </column>
+  </table>
+  <table name="NetdevInfo">
+    <p>
+      p
+    </p>
+
+    <column name="ports">
+      p
+    </column>
+    <column name="NumaNode">
+      p
+    </column>
+    <column name="Speed">
+      p
+    </column>
+    <column name="Type">
+      p
+    </column>
+    <column name="Driver">
+      p
+    </column>
+    <column name="IsUserSpace">
+      p
+    </column>
+  </table>
+  <table name="IssuedConfig">
+  <p>
+    p
+  </p>
+
+  <column name="IsFallbackMode">
+    p
+  </column>
+  <column name="IsUserConfigMode">
+    p
+  </column>
+  <column name="ProcessToNode">
+    p
+  </column>
+  <column name="isAlbMode">
+    p
+  </column>
+  <column name="configChanged">
+    p
+  </column>
+  </table>
+  <table name="dataReport">
+  <p>
+    p
+  </p>
+
+  <column name="setProcessSuccess">
+    p
+  </column>
+  <column name="isAlbMode">
+    p
+  </column>
+  <column name="ConfigError">
+    p
+  </column>
+  <column name="ErrorMessage">
+    p
+  </column>
   </table>
 </database>
