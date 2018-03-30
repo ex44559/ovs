@@ -455,7 +455,7 @@ ovs_numa_set_cpu_mask(const char *cmask)
 }
 
 struct ovsdb_idl *idl;
-unsigned int last_success_seqno;
+unsigned int last_success_seqno, netdev_last_success_seqno;
 bool try_again = false;
 
 void 
@@ -556,7 +556,7 @@ ovs_net_dev_run(void)
 	trying:;
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
-	if (idl_seq != last_success_seqno + 1) {		
+	if (idl_seq != netdev_last_success_seqno) {		
 		const struct ovsrec_netdevinfo *first_netdev_info;
 		struct ovsrec_netdevinfo *netdev_info;
 		enum ovsdb_idl_txn_status status;
@@ -592,7 +592,7 @@ ovs_net_dev_run(void)
 			if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
 				if (status == TXN_SUCCESS) {
 					VLOG_INFO("netdev: txn success!");
-					last_success_seqno = ovsdb_idl_get_seqno(idl);
+					netdev_last_success_seqno = ovsdb_idl_get_seqno(idl);
 					VLOG_INFO("netdev New success IDL seqno is %d", idl_seq);
 				} else {
 						VLOG_WARN("netdev failed: set netdev_info");
