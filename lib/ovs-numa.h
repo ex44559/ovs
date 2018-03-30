@@ -60,6 +60,8 @@ struct ovs_numa_dump *ovs_numa_dump_cores_on_numa(int numa_id);
 void ovs_numa_dump_destroy(struct ovs_numa_dump *);
 void ovs_numa_info_init(const char *remote);
 void ovs_numa_info_run(void);
+void ovs_net_dev_run(void);
+
 
 
 

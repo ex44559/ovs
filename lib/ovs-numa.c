@@ -567,14 +567,14 @@ ovs_net_dev_run(void)
 			return;
 		} 
 		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
-		netdev_info = ovsrec_hardwareinfo_insert(txn);
+		netdev_info = ovsrec_netdevinfo_insert(txn);
 		VLOG_INFO("try to insert a row");
 
 		const char *Driver = "i40e";
 		bool IsUserSpace = false;
 		int64_t NumaNode = 0;
 		const char *ports = "aaaa-aaaa-aaaa-aaaa";
-		int64_t Speed = 400000;
+		const char *Speed = "400000";
 		const char *Type = "Ethernet";
 		ovsrec_netdevinfo_set_Driver(netdev_info, Driver);
 		ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);
