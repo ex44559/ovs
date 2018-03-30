@@ -506,7 +506,7 @@ trying:;
 		int64_t CPUPerNumaNode = 2;
 		int64_t CorePerNumaNode = 20;
 		int64_t MemoryPerNumaNode = 33311248;
-		const char *CPUtype = "Intel(R) Xeon(R) CPU E7-4820 v3 @ 1.90GHz";
+		const char *CPUType = "Intel(R) Xeon(R) CPU E7-4820 v3 @ 1.90GHz";
 		ovsrec_hardwareinfo_set_CPUPerNumaNode(hardware_info, CPUPerNumaNode);
 		ovsrec_hardwareinfo_set_CorePerNumaNode(hardware_info, CorePerNumaNode);
 		ovsrec_hardwareinfo_set_MemoryPerNumaNode(hardware_info, MemoryPerNumaNode);
