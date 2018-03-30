@@ -568,7 +568,7 @@ ovs_net_dev_run(void)
 		} 
 		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
 		netdev_info = ovsrec_netdevinfo_insert(txn);
-		VLOG_INFO("try to insert a row");
+		VLOG_INFO("netdev: try to insert a row");
 
 		const char *Driver = "i40e";
 		bool IsUserSpace = false;
@@ -587,15 +587,15 @@ ovs_net_dev_run(void)
 		VLOG_INFO("set netdev_info");
 			
 		if (status != TXN_INCOMPLETE) { 
-			VLOG_INFO("txn is not incomplete.");
+			VLOG_INFO("netdev: txn is not incomplete.");
 			ovsdb_idl_txn_destroy(txn);
 			if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
 				if (status == TXN_SUCCESS) {
-					VLOG_INFO("txn success!");
+					VLOG_INFO("netdev: txn success!");
 					last_success_seqno = ovsdb_idl_get_seqno(idl);
-					VLOG_INFO("New success IDL seqno is %d", idl_seq);
+					VLOG_INFO("netdev New success IDL seqno is %d", idl_seq);
 				} else {
-						VLOG_WARN("failed: set netdev_info");
+						VLOG_WARN("netdev failed: set netdev_info");
 				}
 			}
 		}
