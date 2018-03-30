@@ -575,10 +575,11 @@ ovs_net_dev_run(void)
 			const char *Driver = "i40e";
 			bool IsUserSpace = false;
 			int64_t NumaNode = 0;
+			const char *ports;
 			if (i == 0)
-				const char *ports = "0754a7d8-484b-45d2-b648-874666f731e9";
+				ports = "0754a7d8-484b-45d2-b648-874666f731e9";
 			else
-				const char *ports = "2a74fd6c-f00d-478b-b606-8affea411a93";
+				ports = "2a74fd6c-f00d-478b-b606-8affea411a93";
 			const char *Speed = "400000";
 			const char *Type = "Ethernet";
 			ovsrec_netdevinfo_set_Driver(netdev_info, Driver);
