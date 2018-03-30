@@ -502,6 +502,17 @@ trying:;
 		VLOG_INFO("numa node number is %" PRId64 "\n", numanodenum);
 		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
 		ovsrec_hardwareinfo_set_NumaNodeNum(hardware_info, numanodenum);
+
+		int64_t CPUPerNumaNode = 2;
+		int64_t CorePerNumaNode = 20;
+		int64_t MemoryPerNumaNode = 33311248;
+		const char *CPUtype = "Intel(R) Xeon(R) CPU E7-4820 v3 @ 1.90GHz";
+		ovsrec_hardwareinfo_set_CPUPerNumaNode(hardware_info, CPUPerNumaNode);
+		ovsrec_hardwareinfo_set_CorePerNumaNode(hardware_info, CorePerNumaNode);
+		ovsrec_hardwareinfo_set_MemoryPerNumaNode(hardware_info, MemoryPerNumaNode);
+		ovsrec_hardwareinfo_set_CPUType(hardware_info, CPUType)
+
+		
 		status = ovsdb_idl_txn_commit_block(txn);
 		VLOG_INFO("set hardware_info numa node number");
 		
