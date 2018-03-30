@@ -555,8 +555,8 @@ ovs_net_dev_run(void)
 	
 	trying:;
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
-	VLOG_INFO("IDL seqno is %d", idl_seq);
-	if (idl_seq != last_success_seqno) {		
+	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
+	if (idl_seq != last_success_seqno + 1) {		
 		const struct ovsrec_netdevinfo *first_netdev_info;
 		struct ovsrec_netdevinfo *netdev_info;
 		enum ovsdb_idl_txn_status status;
