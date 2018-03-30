@@ -489,7 +489,7 @@ trying:;
 		const struct ovsrec_hardwareinfo *first_hardware_info;
 		struct ovsrec_hardwareinfo *hardware_info;
 		enum ovsdb_idl_txn_status status;
-		int64_t numanodenum = (int64_t)hmap_count(&all_numa_nodes);
+		int64_t numanodenum = 4;
 				
 		first_hardware_info = ovsrec_hardwareinfo_first(idl);
 		if (first_hardware_info) {
