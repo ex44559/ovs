@@ -510,7 +510,7 @@ trying:;
 		ovsrec_hardwareinfo_set_CPUPerNumaNode(hardware_info, CPUPerNumaNode);
 		ovsrec_hardwareinfo_set_CorePerNumaNode(hardware_info, CorePerNumaNode);
 		ovsrec_hardwareinfo_set_MemoryPerNumaNode(hardware_info, MemoryPerNumaNode);
-		ovsrec_hardwareinfo_set_CPUType(hardware_info, CPUType)
+		ovsrec_hardwareinfo_set_CPUType(hardware_info, CPUType);
 
 		
 		status = ovsdb_idl_txn_commit_block(txn);
