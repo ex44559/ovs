@@ -539,4 +539,67 @@ trying:;
 	}
 }
 
+void 
+ovs_net_dev_run(void)
+{
+	ovsdb_idl_run(idl);
+		
+	if (try_again) {
+		goto trying;
+	}
+	if (!ovsdb_idl_has_lock(idl) || 
+			ovsdb_idl_is_lock_contended(idl) || 
+			!ovsdb_idl_has_ever_connected(idl)) {
+			return;
+	}
+	
+	trying:;
+	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
+	VLOG_INFO("IDL seqno is %d", idl_seq);
+	if (idl_seq != last_success_seqno) {		
+		const struct ovsrec_netdevinfo *first_netdev_info;
+		struct ovsrec_netdevinfo *netdev_info;
+		enum ovsdb_idl_txn_status status;
+					
+		first_netdev_info = ovsrec_netdevinfo_first(idl);
+		if (first_netdev_info) {
+			VLOG_INFO("NetdevInfo already has a row.");
+			return;
+		} 
+		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
+		netdev_info = ovsrec_hardwareinfo_insert(txn);
+		VLOG_INFO("try to insert a row");
+
+		const char *Driver = "i40e";
+		bool IsUserSpace = false;
+		int64_t NumaNode = 0;
+		const char *ports = "aaaa-aaaa-aaaa-aaaa";
+		int64_t Speed = 400000;
+		const char *Type = "Ethernet";
+		ovsrec_netdevinfo_set_Driver(netdev_info, Driver);
+		ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);
+		ovsrec_netdevinfo_set_NumaNode(netdev_info, NumaNode);
+		ovsrec_netdevinfo_set_ports(netdev_info, ports);
+		ovsrec_netdevinfo_set_Speed(netdev_info, Speed);
+		ovsrec_netdevinfo_set_Type(netdev_info, Type);
+			
+		status = ovsdb_idl_txn_commit_block(txn);
+		VLOG_INFO("set netdev_info");
+			
+		if (status != TXN_INCOMPLETE) { 
+			VLOG_INFO("txn is not incomplete.");
+			ovsdb_idl_txn_destroy(txn);
+			if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
+				if (status == TXN_SUCCESS) {
+					VLOG_INFO("txn success!");
+					last_success_seqno = ovsdb_idl_get_seqno(idl);
+					VLOG_INFO("New success IDL seqno is %d", idl_seq);
+				} else {
+						VLOG_WARN("failed: set netdev_info");
+				}
+			}
+		}
+	}
+}
+
 #endif /* __linux__ */

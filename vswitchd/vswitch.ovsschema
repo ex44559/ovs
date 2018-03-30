@@ -624,9 +624,7 @@
    "NetdevInfo" : {
      "columns" : {
        "ports": {
-         "type": {"key": {"type": "uuid",
-                          "refTable": "Port"},
-                  "min": 0, "max": "unlimited"}},
+         "type": "string"},
        "NumaNode": {
          "type": "integer"},
        "Speed": {
