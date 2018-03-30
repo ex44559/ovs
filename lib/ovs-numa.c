@@ -556,46 +556,52 @@ ovs_net_dev_run(void)
 	trying:;
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
-	if (idl_seq != netdev_last_success_seqno) {		
-		const struct ovsrec_netdevinfo *first_netdev_info;
-		struct ovsrec_netdevinfo *netdev_info;
-		enum ovsdb_idl_txn_status status;
-					
-		first_netdev_info = ovsrec_netdevinfo_first(idl);
-		if (first_netdev_info) {
-			VLOG_INFO("NetdevInfo already has a row.");
-			return;
-		} 
-		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
-		netdev_info = ovsrec_netdevinfo_insert(txn);
-		VLOG_INFO("netdev: try to insert a row");
+	if (idl_seq != netdev_last_success_seqno) {
+		int i = 0;
+		for (i = 0; i < 2; i++) {
+			const struct ovsrec_netdevinfo *first_netdev_info;
+			struct ovsrec_netdevinfo *netdev_info;
+			enum ovsdb_idl_txn_status status;
+						
+			first_netdev_info = ovsrec_netdevinfo_first(idl);
+			if (first_netdev_info) {
+				VLOG_INFO("NetdevInfo already has a row.");
+				return;
+			} 
+			struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
+			netdev_info = ovsrec_netdevinfo_insert(txn);
+			VLOG_INFO("netdev: try to insert a row");
 
-		const char *Driver = "i40e";
-		bool IsUserSpace = false;
-		int64_t NumaNode = 0;
-		const char *ports = "aaaa-aaaa-aaaa-aaaa";
-		const char *Speed = "400000";
-		const char *Type = "Ethernet";
-		ovsrec_netdevinfo_set_Driver(netdev_info, Driver);
-		ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);
-		ovsrec_netdevinfo_set_NumaNode(netdev_info, NumaNode);
-		ovsrec_netdevinfo_set_ports(netdev_info, ports);
-		ovsrec_netdevinfo_set_Speed(netdev_info, Speed);
-		ovsrec_netdevinfo_set_Type(netdev_info, Type);
-			
-		status = ovsdb_idl_txn_commit_block(txn);
-		VLOG_INFO("set netdev_info");
-			
-		if (status != TXN_INCOMPLETE) { 
-			VLOG_INFO("netdev: txn is not incomplete.");
-			ovsdb_idl_txn_destroy(txn);
-			if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
-				if (status == TXN_SUCCESS) {
-					VLOG_INFO("netdev: txn success!");
-					netdev_last_success_seqno = ovsdb_idl_get_seqno(idl);
-					VLOG_INFO("netdev New success IDL seqno is %d", idl_seq);
-				} else {
-						VLOG_WARN("netdev failed: set netdev_info");
+			const char *Driver = "i40e";
+			bool IsUserSpace = false;
+			int64_t NumaNode = 0;
+			if (i == 0)
+				const char *ports = "0754a7d8-484b-45d2-b648-874666f731e9";
+			else
+				const char *ports = "2a74fd6c-f00d-478b-b606-8affea411a93";
+			const char *Speed = "400000";
+			const char *Type = "Ethernet";
+			ovsrec_netdevinfo_set_Driver(netdev_info, Driver);
+			ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);
+			ovsrec_netdevinfo_set_NumaNode(netdev_info, NumaNode);
+			ovsrec_netdevinfo_set_ports(netdev_info, ports);
+			ovsrec_netdevinfo_set_Speed(netdev_info, Speed);
+			ovsrec_netdevinfo_set_Type(netdev_info, Type);
+				
+			status = ovsdb_idl_txn_commit_block(txn);
+			VLOG_INFO("set netdev_info");
+				
+			if (status != TXN_INCOMPLETE) { 
+				VLOG_INFO("netdev: txn is not incomplete.");
+				ovsdb_idl_txn_destroy(txn);
+				if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
+					if (status == TXN_SUCCESS) {
+						VLOG_INFO("netdev: txn success!");
+						netdev_last_success_seqno = ovsdb_idl_get_seqno(idl);
+						VLOG_INFO("netdev New success IDL seqno is %d", idl_seq);
+					} else {
+							VLOG_WARN("netdev failed: set netdev_info");
+					}
 				}
 			}
 		}
