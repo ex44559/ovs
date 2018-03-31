@@ -581,7 +581,7 @@ ovs_net_dev_run(void)
 				ports = "0754a7d8-484b-45d2-b648-874666f731e9";
 			else
 				ports = "2a74fd6c-f00d-478b-b606-8affea411a93";
-			const char *Speed = "400000";
+			const char *Speed = "40000";
 			const char *Type = "Ethernet";
 			ovsrec_netdevinfo_set_Driver(netdev_info, Driver);
 			ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);

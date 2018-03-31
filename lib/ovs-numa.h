@@ -66,9 +66,6 @@ void ovs_data_report_run(void);
 
 
 
-
-
-
 #define FOR_EACH_CORE_ON_NUMA(ITER, DUMP)                    \
     LIST_FOR_EACH((ITER), list_node, &(DUMP)->dump)
 
