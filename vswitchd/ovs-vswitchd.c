@@ -123,6 +123,7 @@ main(int argc, char *argv[])
         bridge_run();
 		ovs_numa_info_run();
 		ovs_net_dev_run();
+		ovs_issued_config_run();
         unixctl_server_run(unixctl);
         netdev_run();
 

@@ -456,6 +456,7 @@ ovs_numa_set_cpu_mask(const char *cmask)
 
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
+unsigned int issued_config_last_success_seqno;
 bool try_again = false;
 
 void 
@@ -608,5 +609,67 @@ ovs_net_dev_run(void)
 		}
 	}
 }
+
+void 
+ovs_issued_config_run(void)
+{
+	ovsdb_idl_run(idl);
+		
+	if (try_again) {
+		goto trying;
+	}
+	if (!ovsdb_idl_has_lock(idl) || 
+			ovsdb_idl_is_lock_contended(idl) || 
+			!ovsdb_idl_has_ever_connected(idl)) {
+			return;
+	}
+	
+	trying:;
+	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
+	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
+	if (idl_seq != issued_config_last_success_seqno) {
+		const struct ovsrec_issuedconfig *first_issuedconfig;
+		struct ovsrec_issuedconfig *issuedconfig_info;
+		enum ovsdb_idl_txn_status status;
+						
+		first_issuedconfig = ovsrec_issuedconfig_first(idl);
+		if (first_issuedconfig) {
+			VLOG_INFO("issued config already has a row.");
+			return;
+		} 
+		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
+		issuedconfig_info = ovsrec_issuedconfig_insert(txn);
+		VLOG_INFO("issued config: try to insert a row");
+
+		bool configChanged = true;
+		bool isAlbMode = true;
+		bool IsFallbackMode = false;
+		bool IsUserConfigMode = false;
+		int64_t ProcessToNode = 0;
+		ovsrec_issuedconfig_set_configChanged(issuedconfig_info, configChanged);
+		ovsrec_issuedconfig_set_isAlbMode(issuedconfig_info, isAlbMode);
+		ovsrec_issuedconfig_set_IsFallbackMode(issuedconfig_info, IsFallbackMode);
+		ovsrec_issuedconfig_set_IsUserConfigMode(issuedconfig_info, IsUserConfigMode);
+		ovsrec_issuedconfig_set_ProcessToNode(issuedconfig_info, ProcessToNode);
+				
+		status = ovsdb_idl_txn_commit_block(txn);
+		VLOG_INFO("set issued config");
+				
+		if (status != TXN_INCOMPLETE) { 
+			VLOG_INFO("issued config: txn is not incomplete.");
+			ovsdb_idl_txn_destroy(txn);
+			if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
+				if (status == TXN_SUCCESS) {
+					VLOG_INFO("issued config: txn success!");
+					issued_config_last_success_seqno = ovsdb_idl_get_seqno(idl);
+					VLOG_INFO("issued config New success IDL seqno is %d", idl_seq);
+				} else {
+					VLOG_WARN("issued config failed: set netdev_info");
+				}
+			}
+		}
+	}
+}
+
 
 #endif /* __linux__ */
