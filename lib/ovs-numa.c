@@ -456,7 +456,7 @@ ovs_numa_set_cpu_mask(const char *cmask)
 
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
-unsigned int issued_config_last_success_seqno;
+unsigned int issued_config_last_success_seqno, data_report_last_success_seqno;
 bool try_again = false;
 
 void 
@@ -671,5 +671,63 @@ ovs_issued_config_run(void)
 	}
 }
 
+void 
+ovs_data_report_run(void)
+{
+	ovsdb_idl_run(idl);
+		
+	if (try_again) {
+		goto trying;
+	}
+	if (!ovsdb_idl_has_lock(idl) || 
+			ovsdb_idl_is_lock_contended(idl) || 
+			!ovsdb_idl_has_ever_connected(idl)) {
+			return;
+	}
+	
+	trying:;
+	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
+	VLOG_INFO("data report IDL seqno is %d", idl_seq);
+	if (idl_seq != data_report_last_success_seqno) {
+		const struct ovsrec_issuedconfig *first_dataReport;
+		struct ovsrec_issuedconfig *dataReport_info;
+		enum ovsdb_idl_txn_status status;
+						
+		first_dataReport= ovsrec_datareport_first(idl);
+		if (first_dataReport) {
+			VLOG_INFO("data report already has a row.");
+			return;
+		} 
+		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
+		dataReport_info = ovsrec_datareport_insert(txn);
+		VLOG_INFO("data report: try to insert a row");
+
+		bool ConfigError = false;
+		bool isAlbMode = true;
+		bool setProcessSuccess = true;
+		const char *ErrorMessage = "";
+		ovsrec_datareport_set_ConfigError(dataReport_info, ConfigError);
+		ovsrec_datareport_set_isAlbMode(dataReport_info, isAlbMode);
+		ovsrec_datareport_set_setProcessSuccess(dataReport_info, setProcessSuccess);
+		ovsrec_datareport_set_ErrorMessage(dataReport_info, ErrorMessage);
+				
+		status = ovsdb_idl_txn_commit_block(txn);
+		VLOG_INFO("set data report");
+				
+		if (status != TXN_INCOMPLETE) { 
+			VLOG_INFO("data report: txn is not incomplete.");
+			ovsdb_idl_txn_destroy(txn);
+			if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
+				if (status == TXN_SUCCESS) {
+					VLOG_INFO("data report: txn success!");
+					data_report_last_success_seqno = ovsdb_idl_get_seqno(idl);
+					VLOG_INFO("data report New success IDL seqno is %d", idl_seq);
+				} else {
+					VLOG_WARN("data report failed: set netdev_info");
+				}
+			}
+		}
+	}
+}
 
 #endif /* __linux__ */

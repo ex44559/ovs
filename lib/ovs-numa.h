@@ -62,6 +62,8 @@ void ovs_numa_info_init(const char *remote);
 void ovs_numa_info_run(void);
 void ovs_net_dev_run(void);
 void ovs_issued_config_run(void);
+void ovs_data_report_run(void);
+
 
 
 

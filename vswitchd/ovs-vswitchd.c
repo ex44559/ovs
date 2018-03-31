@@ -124,6 +124,7 @@ main(int argc, char *argv[])
 		ovs_numa_info_run();
 		ovs_net_dev_run();
 		ovs_issued_config_run();
+		ovs_data_report_run();
         unixctl_server_run(unixctl);
         netdev_run();
 
