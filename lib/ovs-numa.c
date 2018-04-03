@@ -559,7 +559,7 @@ ovs_net_dev_run(void)
 	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
 	if (idl_seq != netdev_last_success_seqno) {
 		int i = 0;
-		for (i = 0; i < 2; i++) {
+		for (i = 0; i < 4; i++) {
 			const struct ovsrec_netdevinfo *first_netdev_info;
 			struct ovsrec_netdevinfo *netdev_info;
 			enum ovsdb_idl_txn_status status;
@@ -573,15 +573,28 @@ ovs_net_dev_run(void)
 			netdev_info = ovsrec_netdevinfo_insert(txn);
 			VLOG_INFO("netdev: try to insert a row");
 
-			const char *Driver = "i40e";
+			
+			const char *Driver;
+			if (i == 0 || i == 1)
+				Driver = "i40e";
+			else
+				Driver = "ixgbe";
 			bool IsUserSpace = false;
 			int64_t NumaNode = 0;
 			const char *ports;
 			if (i == 0)
 				ports = "0754a7d8-484b-45d2-b648-874666f731e9";
-			else
+			else if (i == 1)
 				ports = "2a74fd6c-f00d-478b-b606-8affea411a93";
-			const char *Speed = "40000";
+			else if (i == 2)
+				ports = "3a914357-0720-485c-8637-4d352988ce13";
+			else
+				ports = "2c8c753f-796e-4c85-80a6-4039a5a7aef4";
+			const char *Speed;
+			if (i == 2 || i == 3) 
+				Speed = "10000";
+			else
+				Speed = "40000";
 			const char *Type = "Ethernet";
 			ovsrec_netdevinfo_set_Driver(netdev_info, Driver);
 			ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);
