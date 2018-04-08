@@ -715,7 +715,7 @@ ovs_data_report_run(void)
 		dataReport_info = ovsrec_datareport_insert(txn);
 		VLOG_INFO("data report: try to insert a row");
 
-		bool ConfigError = false;
+		bool ConfigError = true;
 		bool isAlbMode = true;
 		bool setProcessSuccess = false;
 		const char *ErrorMessage = "CPU_ALLOC error";
