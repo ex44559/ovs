@@ -717,8 +717,8 @@ ovs_data_report_run(void)
 
 		bool ConfigError = false;
 		bool isAlbMode = true;
-		bool setProcessSuccess = true;
-		const char *ErrorMessage = "";
+		bool setProcessSuccess = false;
+		const char *ErrorMessage = "CPU_ALLOC error";
 		ovsrec_datareport_set_ConfigError(dataReport_info, ConfigError);
 		ovsrec_datareport_set_isAlbMode(dataReport_info, isAlbMode);
 		ovsrec_datareport_set_setProcessSuccess(dataReport_info, setProcessSuccess);
