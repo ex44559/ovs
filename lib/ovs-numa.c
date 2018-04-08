@@ -655,8 +655,8 @@ ovs_issued_config_run(void)
 		VLOG_INFO("issued config: try to insert a row");
 
 		bool configChanged = true;
-		bool isAlbMode = true;
-		bool IsFallbackMode = false;
+		bool isAlbMode = false;
+		bool IsFallbackMode = true;
 		bool IsUserConfigMode = false;
 		int64_t ProcessToNode = 0;
 		ovsrec_issuedconfig_set_configChanged(issuedconfig_info, configChanged);
