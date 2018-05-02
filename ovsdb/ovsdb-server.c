@@ -221,6 +221,12 @@ main(int argc, char *argv[])
     process_init();
 
     parse_options(&argc, &argv, &remotes, &unixctl_path, &run_command);
+
+	const char *name;
+	SSET_FOR_EACH (name, remotes) {
+		VLOG_INFO("remote name is %s", name);
+    }
+	
     daemon_become_new_user(false);
 
     /* Create and initialize 'config_tmpfile' as a temporary file to hold
