@@ -223,7 +223,7 @@ main(int argc, char *argv[])
     parse_options(&argc, &argv, &remotes, &unixctl_path, &run_command);
 
 	const char *name;
-	SSET_FOR_EACH (name, remotes) {
+	SSET_FOR_EACH (name, &remotes) {
 		VLOG_INFO("remote name is %s", name);
     }
 	
