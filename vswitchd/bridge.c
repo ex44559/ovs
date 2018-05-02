@@ -379,7 +379,6 @@ bridge_init_ofproto(const struct ovsrec_open_vswitch *cfg)
     }
 
     ofproto_init(&iface_hints);
-	VLOG_INFO("Bridge init open vswitch table.");
     shash_destroy_free_data(&iface_hints);
     initialized = true;
 }
@@ -5131,7 +5130,6 @@ discover_types(const struct ovsrec_open_vswitch *cfg)
     netdev_enumerate_types(&types);
     const char **iface_types = sset_array(&types);
     ovsrec_open_vswitch_set_iface_types(cfg, iface_types, sset_count(&types));
-	VLOG_INFO("table open vswitch: set iface types.");
     free(iface_types);
     sset_destroy(&types);
 }

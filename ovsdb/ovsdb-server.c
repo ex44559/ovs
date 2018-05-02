@@ -976,6 +976,7 @@ reconfigure_remotes(struct ovsdb_jsonrpc_server *jsonrpc,
     /* Configure remotes. */
     shash_init(&resolved_remotes);
     SSET_FOR_EACH (name, remotes) {
+		VLOG_INFO("remote name is %s", name);
         if (!strncmp(name, "db:", 3)) {
             query_db_remotes(name, all_dbs, &resolved_remotes, &errors);
         } else {
