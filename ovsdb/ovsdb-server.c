@@ -1115,7 +1115,8 @@ static void
 ovsdb_server_add_remote(struct unixctl_conn *conn, int argc OVS_UNUSED,
                         const char *argv[], void *config_)
 {
-    struct server_config *config = config_;
+	VLOG_INFO("ovsdb_server_add_remote is called.");
+	struct server_config *config = config_;
     const char *remote = argv[1];
 
     const struct ovsdb_column *column;
