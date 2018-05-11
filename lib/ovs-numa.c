@@ -457,7 +457,6 @@ ovs_numa_set_cpu_mask(const char *cmask)
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
 unsigned int issued_config_last_success_seqno, data_report_last_success_seqno;
-bool try_again = false;
 
 void 
 ovs_numa_info_init(const char *remote) 
@@ -474,24 +473,19 @@ ovs_numa_info_run(void)
 {
 	ovsdb_idl_run(idl);
 	
-	if (try_again) {
-		goto trying;
-	}
 	if (!ovsdb_idl_has_lock(idl) || 
 			ovsdb_idl_is_lock_contended(idl) || 
 			!ovsdb_idl_has_ever_connected(idl)) {
 			return;
 	}
 
-trying:;
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("IDL seqno is %d", idl_seq);
 	if (idl_seq != last_success_seqno) {		
 		const struct ovsrec_hardwareinfo *first_hardware_info;
 		struct ovsrec_hardwareinfo *hardware_info;
 		enum ovsdb_idl_txn_status status;
-		int64_t numanodenum = 4;
-				
+						
 		first_hardware_info = ovsrec_hardwareinfo_first(idl);
 		if (first_hardware_info) {
 			VLOG_INFO("HardwareInfo already has a row.");
@@ -500,14 +494,14 @@ trying:;
 		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
 		hardware_info = ovsrec_hardwareinfo_insert(txn);
 		VLOG_INFO("try to insert a row");
-		VLOG_INFO("numa node number is %" PRId64 "\n", numanodenum);
-		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
-		ovsrec_hardwareinfo_set_NumaNodeNum(hardware_info, numanodenum);
 
+		int64_t numanodenum = hmap_count(&all_numa_nodes);
 		int64_t CPUPerNumaNode = 2;
-		int64_t CorePerNumaNode = 20;
+		int64_t CorePerNumaNode = ovs_numa_get_n_cores_on_numa(0);
 		int64_t MemoryPerNumaNode = 33311248;
 		const char *CPUType = "Intel(R) Xeon(R) CPU E7-4820 v3 @ 1.90GHz";
+		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
+		ovsrec_hardwareinfo_set_NumaNodeNum(hardware_info, numanodenum);
 		ovsrec_hardwareinfo_set_CPUPerNumaNode(hardware_info, CPUPerNumaNode);
 		ovsrec_hardwareinfo_set_CorePerNumaNode(hardware_info, CorePerNumaNode);
 		ovsrec_hardwareinfo_set_MemoryPerNumaNode(hardware_info, MemoryPerNumaNode);
@@ -525,13 +519,6 @@ trying:;
 					VLOG_INFO("txn success!");
 					last_success_seqno = ovsdb_idl_get_seqno(idl);
 					VLOG_INFO("New success IDL seqno is %d", idl_seq);
-					const struct ovsrec_hardwareinfo *new_hardware_info;
-					new_hardware_info = ovsrec_hardwareinfo_first(idl);
-					if (new_hardware_info) {
-						VLOG_INFO("numa node num of idl is %" PRId64 "\n", new_hardware_info->NumaNodeNum);
-					} else {
-						VLOG_INFO("no new row");
-					}
 				}
 			} else {
 					VLOG_WARN("failed: set hardware_info numa node number.");
@@ -544,17 +531,13 @@ void
 ovs_net_dev_run(void)
 {
 	ovsdb_idl_run(idl);
-		
-	if (try_again) {
-		goto trying;
-	}
+
 	if (!ovsdb_idl_has_lock(idl) || 
 			ovsdb_idl_is_lock_contended(idl) || 
 			!ovsdb_idl_has_ever_connected(idl)) {
 			return;
 	}
 	
-	trying:;
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
 	if (idl_seq != netdev_last_success_seqno) {
@@ -628,16 +611,12 @@ ovs_issued_config_run(void)
 {
 	ovsdb_idl_run(idl);
 		
-	if (try_again) {
-		goto trying;
-	}
 	if (!ovsdb_idl_has_lock(idl) || 
 			ovsdb_idl_is_lock_contended(idl) || 
 			!ovsdb_idl_has_ever_connected(idl)) {
 			return;
 	}
 	
-	trying:;
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
 	if (idl_seq != issued_config_last_success_seqno) {
@@ -689,21 +668,17 @@ ovs_data_report_run(void)
 {
 	ovsdb_idl_run(idl);
 		
-	if (try_again) {
-		goto trying;
-	}
 	if (!ovsdb_idl_has_lock(idl) || 
 			ovsdb_idl_is_lock_contended(idl) || 
 			!ovsdb_idl_has_ever_connected(idl)) {
 			return;
 	}
 	
-	trying:;
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("data report IDL seqno is %d", idl_seq);
 	if (idl_seq != data_report_last_success_seqno) {
-		const struct ovsrec_issuedconfig *first_dataReport;
-		struct ovsrec_issuedconfig *dataReport_info;
+		const struct ovsrec_datareport *first_dataReport;
+		struct ovsrec_datareport *dataReport_info;
 		enum ovsdb_idl_txn_status status;
 						
 		first_dataReport= ovsrec_datareport_first(idl);
