@@ -19,16 +19,14 @@
 
 #include <config.h>
 #include "ovs-numa.h"
-
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/sysinfo.h>
+#include <fcntl.h>
 #include <unistd.h>
-
 #include "hash.h"
 #include "hmap.h"
 #include "list.h"
@@ -455,6 +453,28 @@ ovs_numa_set_cpu_mask(const char *cmask)
     }
 }
 
+int 
+discover_cpu_number_per_numa_node(void) 
+{
+	const char *path = "/sys/devices/system/node/node0/cpulist";
+	int fd = open(path, O_RDONLY);
+	char buffer[200];
+
+	memset(buffer, 0, sizeof(buffer));
+	if (read(fd, buffer, sizeof(buffer)) < 0) {
+		VLOG_INFO("cannot read /sys/devices/system/node/node0/cpulist");
+		return 1;
+	}
+
+	int cpu_count = 1; 
+	for (int i = 0; i < sizeof(buffer); i++) {
+		if (buffer[i] == ',') {
+			cpu_count++;
+		}
+	}
+	return cpu_count;
+}
+
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
 unsigned int issued_config_last_success_seqno, data_report_last_success_seqno;
@@ -498,7 +518,7 @@ ovs_numa_info_run(void)
 
 		int64_t numanodenum = hmap_count(&all_numa_nodes);
 		int64_t CorePerNumaNode = ovs_numa_get_n_cores_on_numa(0);
-		int64_t CPUPerNumaNode = get_nprocs() / CorePerNumaNode;
+		int64_t CPUPerNumaNode = discover_cpu_number_per_numa_node();
 		int64_t MemoryPerNumaNode = 33311248;
 		const char *CPUType = "Intel(R) Xeon(R) CPU E7-4820 v3 @ 1.90GHz";
 		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
