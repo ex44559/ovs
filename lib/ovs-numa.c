@@ -26,6 +26,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/sysinfo.h>
 #include <unistd.h>
 
 #include "hash.h"
@@ -496,8 +497,8 @@ ovs_numa_info_run(void)
 		VLOG_INFO("try to insert a row");
 
 		int64_t numanodenum = hmap_count(&all_numa_nodes);
-		int64_t CPUPerNumaNode = 2;
 		int64_t CorePerNumaNode = ovs_numa_get_n_cores_on_numa(0);
+		int64_t CPUPerNumaNode = get_nprocs() / CorePerNumaNode;
 		int64_t MemoryPerNumaNode = 33311248;
 		const char *CPUType = "Intel(R) Xeon(R) CPU E7-4820 v3 @ 1.90GHz";
 		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
