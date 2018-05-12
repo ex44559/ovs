@@ -23,7 +23,3 @@ env:
 
 script: ./.travis/build.sh $OPTS
 
-notifications:
-  email:
-    recipients:
-      - ovs-build@openvswitch.org
