@@ -462,7 +462,7 @@ discover_cpu_number_per_numa_node(void)
 
 	memset(buffer, 0, sizeof(buffer));
 	if (read(fd, buffer, sizeof(buffer)) < 0) {
-		VLOG_INFO("cannot read /sys/devices/system/node/node0/cpulist");
+		VLOG_WARN("cannot read /sys/devices/system/node/node0/cpulist");
 		return 1;
 	}
 
@@ -474,6 +474,29 @@ discover_cpu_number_per_numa_node(void)
 	}
 	return cpu_count;
 }
+
+int64_t
+discover_memory_per_numa_node(void) 
+{
+	const char *path = "/sys/devices/system/node/node0/meminfo";
+	int fd = open(path, O_RDONLY);
+	char buffer[800];
+
+	memset(buffer, 0, sizeof(buffer));
+	if (read(fd, buffer, sizeof(buffer)) < 0) {
+		VLOG_WARN("cannot read /sys/devices/system/node/node0/meminfo");
+		return 0;
+	}
+
+	int64_t memsize = 0;
+	for (int i = 0; i < sizeof(buffer) && buffer[i] != 'k'; i++) {
+		if (buffer[i] <= '9' && buffer[i] >= '0') {
+			memsize = memsize * 10 + buffer[i] - '0';
+		}
+	}
+	return memsize;
+}
+
 
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
@@ -519,7 +542,7 @@ ovs_numa_info_run(void)
 		int64_t numanodenum = hmap_count(&all_numa_nodes);
 		int64_t CorePerNumaNode = ovs_numa_get_n_cores_on_numa(0);
 		int64_t CPUPerNumaNode = discover_cpu_number_per_numa_node();
-		int64_t MemoryPerNumaNode = 33311248;
+		int64_t MemoryPerNumaNode = discover_memory_per_numa_node();
 		const char *CPUType = "Intel(R) Xeon(R) CPU E7-4820 v3 @ 1.90GHz";
 		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
 		ovsrec_hardwareinfo_set_NumaNodeNum(hardware_info, numanodenum);
