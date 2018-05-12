@@ -511,12 +511,10 @@ discover_cpu_model(void)
 	while (fgets(buffer, sizeof(buffer), pp) != NULL) {
 		for (int i = 0; i < sizeof(buffer) && buffer[i] != '\0' && 
 						buffer[i] != '\n'; i++) {
-			if (buffer[i] == ':') {
+			if (buffer[i] == 'I') {
 				find = true;
-				continue;
 			}
-
-			if (find && buffer[i] != ' ') {
+			if (find) {
 				cpu_model[j++] = buffer[i];
 			}
 		}
