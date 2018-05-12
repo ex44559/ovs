@@ -24,9 +24,10 @@
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdio.h>
 #include <sys/types.h>
-#include <fcntl.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "hash.h"
 #include "hmap.h"
 #include "list.h"
@@ -497,6 +498,32 @@ discover_memory_per_numa_node(void)
 	return memsize;
 }
 
+char *
+discover_cpu_model(void)
+{
+	char *cpu_model = xzalloc(100 * sizeof(char));
+	FILE *pp = popen("lscpu | grep \"Model name\"", "r");
+
+	char buffer[200];
+	memset(buffer, 0, sizeof(buffer));
+	int j = 0;
+	bool find = false;
+	while (fgets(buffer, sizeof(buffer), pp) != NULL) {
+		for (int i = 0; i < sizeof(buffer) && buffer[i] != '\0' && 
+						buffer[i] != '\n'; i++) {
+			if (buffer[i] == ':') {
+				find = true;
+				continue;
+			}
+
+			if (find) {
+				cpu_model[j++] = buffer[i];
+			}
+		}
+	}
+	return cpu_model;
+}
+
 
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
@@ -543,7 +570,7 @@ ovs_numa_info_run(void)
 		int64_t CorePerNumaNode = ovs_numa_get_n_cores_on_numa(0);
 		int64_t CPUPerNumaNode = discover_cpu_number_per_numa_node();
 		int64_t MemoryPerNumaNode = discover_memory_per_numa_node();
-		const char *CPUType = "Intel(R) Xeon(R) CPU E7-4820 v3 @ 1.90GHz";
+		char *CPUType = discover_cpu_model();
 		ovsrec_hardwareinfo_verify_NumaNodeNum(hardware_info);
 		ovsrec_hardwareinfo_set_NumaNodeNum(hardware_info, numanodenum);
 		ovsrec_hardwareinfo_set_CPUPerNumaNode(hardware_info, CPUPerNumaNode);
@@ -568,7 +595,9 @@ ovs_numa_info_run(void)
 					VLOG_WARN("failed: set hardware_info numa node number.");
 			   }
 		}
+		free(CPUType);
 	}
+	
 }
 
 void 
