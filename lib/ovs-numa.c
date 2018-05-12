@@ -516,7 +516,7 @@ discover_cpu_model(void)
 				continue;
 			}
 
-			if (find) {
+			if (find && buffer[i] != ' ') {
 				cpu_model[j++] = buffer[i];
 			}
 		}
