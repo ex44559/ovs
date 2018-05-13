@@ -536,6 +536,14 @@ ovs_numa_info_init(const char *remote)
 	ovsdb_idl_add_table(idl, &ovsrec_table_hardwareinfo);
 	ovsdb_idl_add_column(idl, &ovsrec_hardwareinfo_col_NumaNodeNum);
 	ovsdb_idl_set_lock(idl, "hardware_info");
+	ovs_net_dev_init();
+}
+
+void 
+ovs_net_dev_init(void) 
+{	
+	ovsdb_idl_add_table(idl, &ovsrec_table_port);
+	ovsdb_idl_add_column(idl, &ovsrec_port_col_name);
 }
 
 void
@@ -559,6 +567,7 @@ ovs_numa_info_run(void)
 		first_hardware_info = ovsrec_hardwareinfo_first(idl);
 		if (first_hardware_info) {
 			VLOG_INFO("HardwareInfo already has a row.");
+			idl_seq = last_success_seqno;
 			return;
 		} 
 		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
