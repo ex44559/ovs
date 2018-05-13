@@ -745,22 +745,30 @@ ovs_net_dev_run(void)
 		const struct ovsrec_netdevinfo *delete_netdev_info, *delete_netdev_info_next;
 		enum ovsdb_idl_txn_status status, delete_status;
 
-		for (delete_netdev_info = ovsrec_netdevinfo_first(idl); delete_netdev_info != NULL;
-				delete_netdev_info = delete_netdev_info_next) {
-			struct ovsdb_idl_txn *delete_txn = ovsdb_idl_txn_create(idl);
-			delete_netdev_info_next = ovsrec_netdevinfo_next(delete_netdev_info);
-			ovsrec_netdevinfo_delete(delete_netdev_info);
+		int port_count = 0;
+		for (port = ovsrec_port_first(idl); port != NULL; 
+				port = ovsrec_port_next(port)) {
+			port_count++;
+		}
 
-			delete_status = ovsdb_idl_txn_commit_block(delete_txn);
-				
-			if (delete_status != TXN_INCOMPLETE) { 
-				VLOG_INFO("netdev: delete txn is not incomplete.");
-				ovsdb_idl_txn_destroy(delete_txn);
-				if (delete_status == TXN_SUCCESS || delete_status == TXN_UNCHANGED) {
-					if (delete_status == TXN_SUCCESS) {
-						VLOG_INFO("netdev: delete txn success!");
-					} else {
-							VLOG_WARN("netdev failed: delete netdev_info");
+		if (port_count > last_net_dev_num + 1) {
+			for (delete_netdev_info = ovsrec_netdevinfo_first(idl); delete_netdev_info != NULL;
+					delete_netdev_info = delete_netdev_info_next) {
+				struct ovsdb_idl_txn *delete_txn = ovsdb_idl_txn_create(idl);
+				delete_netdev_info_next = ovsrec_netdevinfo_next(delete_netdev_info);
+				ovsrec_netdevinfo_delete(delete_netdev_info);
+
+				delete_status = ovsdb_idl_txn_commit_block(delete_txn);
+					
+				if (delete_status != TXN_INCOMPLETE) { 
+					VLOG_INFO("netdev: delete txn is not incomplete.");
+					ovsdb_idl_txn_destroy(delete_txn);
+					if (delete_status == TXN_SUCCESS || delete_status == TXN_UNCHANGED) {
+						if (delete_status == TXN_SUCCESS) {
+							VLOG_INFO("netdev: delete txn success!");
+						} else {
+								VLOG_WARN("netdev failed: delete netdev_info");
+						}
 					}
 				}
 			}
@@ -770,10 +778,6 @@ ovs_net_dev_run(void)
 		for (port = ovsrec_port_first(idl); port != NULL; 
 				port = ovsrec_port_next(port)) {
 			if (strcmp(port->name, "ovsbr") == 0) {
-				continue;
-			}
-			if (i < last_net_dev_num) {
-				i++;
 				continue;
 			}
 			
@@ -812,6 +816,7 @@ ovs_net_dev_run(void)
 						VLOG_INFO("netdev: txn success!");
 						netdev_last_success_seqno = ovsdb_idl_get_seqno(idl);
 						VLOG_INFO("netdev New success IDL seqno is %d", idl_seq);
+						i++;
 					} else {
 							VLOG_WARN("netdev failed: set netdev_info");
 					}
@@ -819,7 +824,6 @@ ovs_net_dev_run(void)
 			}
 
 			free(driver);
-			i++;
 			last_net_dev_num = i;
 		}
 	}
