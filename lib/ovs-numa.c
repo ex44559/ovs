@@ -626,14 +626,8 @@ ovs_net_dev_run(void)
 		
 		for (port = ovsrec_port_first(idl); port != NULL; 
 				port = ovsrec_port_next(port)) {
-			struct ds dyn_str;
-			char *port_name;
-			
-			const struct ovsdb_datum *res = ovsrec_port_get_name(port, OVSDB_TYPE_STRING);
-			ovsdb_atom_to_string(res->values, OVSDB_TYPE_STRING, &dyn_str);
-			port_name = dyn_str.string;
 
-			VLOG_INFO("ovs_net_dev_run port_name is %s", port_name);
+			VLOG_INFO("ovs_net_dev_run port_name is %s", port->name);
 		}
 		/*
 		for (int i = 0; i < 4; i++) {
