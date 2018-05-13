@@ -742,7 +742,29 @@ ovs_net_dev_run(void)
 	if (idl_seq != netdev_last_success_seqno) {
 		const struct ovsrec_port *port;
 		struct ovsrec_netdevinfo *netdev_info;
-		enum ovsdb_idl_txn_status status;
+		const struct ovsrec_netdevinfo *delete_netdev_info, *delete_netdev_info_next;
+		enum ovsdb_idl_txn_status status, delete_status;
+
+		for (delete_netdev_info = ovsrec_netdevinfo_first(idl); delete_netdev_info != NULL;
+				delete_netdev_info = delete_netdev_info_next) {
+			struct ovsdb_idl_txn *delete_txn = ovsdb_idl_txn_create(idl);
+			delete_netdev_info_next = ovsrec_netdevinfo_next(delete_netdev_info);
+			ovsrec_netdevinfo_delete(delete_netdev_info);
+
+			delete_status = ovsdb_idl_txn_commit_block(delete_txn);
+				
+			if (delete_status != TXN_INCOMPLETE) { 
+				VLOG_INFO("netdev: delete txn is not incomplete.");
+				ovsdb_idl_txn_destroy(delete_txn);
+				if (delete_status == TXN_SUCCESS || delete_status == TXN_UNCHANGED) {
+					if (delete_status == TXN_SUCCESS) {
+						VLOG_INFO("netdev: delete txn success!");
+					} else {
+							VLOG_WARN("netdev failed: delete netdev_info");
+					}
+				}
+			}
+		}
 
 		int i = 0;
 		for (port = ovsrec_port_first(idl); port != NULL; 
