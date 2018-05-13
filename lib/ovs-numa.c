@@ -741,7 +741,6 @@ ovs_net_dev_run(void)
 	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
 	if (idl_seq != netdev_last_success_seqno) {
 		const struct ovsrec_port *port;
-		const struct ovsrec_netdevinfo *first_netdev_info;
 		struct ovsrec_netdevinfo *netdev_info;
 		enum ovsdb_idl_txn_status status;
 
