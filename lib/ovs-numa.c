@@ -28,6 +28,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <linux/ethtool.h>
+#include <linux/sockios.h>
 #include "hash.h"
 #include "hmap.h"
 #include "list.h"
@@ -524,6 +529,87 @@ discover_cpu_model(void)
 	return cpu_model;
 }
 
+char *
+discover_nic_dirver(char *nic_name) 
+{
+	char *cmd = xasprintf("ethtool -i %s | grep driver", nic_name);
+	FILE *pp = popen(cmd, "r");
+
+	char buffer[100];
+	int j = 0;
+	bool find = false;
+	char *nic_driver = xzalloc(100 * sizeof(char));
+	memset(buffer, 0, sizeof(buffer));
+	while (fgets(buffer, sizeof(buffer), pp) != NULL) {
+		for (int i = 0; i < sizeof(buffer); i++) {
+			if (buffer[i] == 'i') {
+				find = true;
+			}
+			if (find) {
+				nic_driver[j++] = buffer[i];
+			}
+		}
+	}
+	free(cmd);
+	return nic_driver;
+}
+
+char *
+discover_nic_speed(char *nic_name) 
+{
+	int sock;
+	struct ifreq ifr; /* this data structure defined in if.h */
+	struct ethtool_cmd edata; /* this defined in ethtool.h */
+	int rc;
+	char *nic_speed = xzalloc(100 * sizeof(char));
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		VLOG_ERR("discover_nic_speed socket err\n");
+		return nic_speed;
+	}
+
+	memset(&ifr, 0, sizeof(ifr));
+	strcpy(ifr.ifr_name, nic_name);
+
+	ifr.ifr_data = (char *)&edata;
+	edata.cmd = ETHTOOL_GSET;
+	/* get netdev speed info */
+	rc = ioctl(sock, SIOCETHTOOL, &ifr);
+	if (rc < 0) {
+		VLOG_ERR("ofproto ioctl_ethtool aslb ioctl err\n");
+		return nic_speed;
+	}
+
+	/* obtain netdevspeed. */
+	switch(ethtool_cmd_speed(&edata)) {
+		case SPEED_10:
+			strcpy(nic_speed, "10");
+			break;
+		case SPEED_100:
+			strcpy(nic_speed, "100");
+			break;
+		case SPEED_1000:
+			strcpy(nic_speed, "1000");
+			break;
+		case SPEED_2500:
+			strcpy(nic_speed, "2500");
+			break;
+		case SPEED_10000:
+			strcpy(nic_speed, "10000");
+			break;
+		case SPEED_40000:
+			strcpy(nic_speed, "10000");
+			break;
+
+		default:
+			strcpy(nic_speed, "0");
+	}
+
+	close(sock);
+	return nic_speed;
+}
+
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
 unsigned int issued_config_last_success_seqno, data_report_last_success_seqno;
@@ -623,26 +709,57 @@ ovs_net_dev_run(void)
 	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
 	if (idl_seq != netdev_last_success_seqno) {
 		const struct ovsrec_port *port;
+		const struct ovsrec_netdevinfo *first_netdev_info;
+		struct ovsrec_netdevinfo *netdev_info;
+		enum ovsdb_idl_txn_status status;
+						
+		first_netdev_info = ovsrec_netdevinfo_first(idl);
+		if (first_netdev_info) {
+			VLOG_INFO("NetdevInfo already has a row.");
+			return;
+		} 
 		
 		for (port = ovsrec_port_first(idl); port != NULL; 
-				port = ovsrec_port_next(port)) {
-
-			VLOG_INFO("ovs_net_dev_run port_name is %s", port->name);
-		}
-		/*
-		for (int i = 0; i < 4; i++) {
-			const struct ovsrec_netdevinfo *first_netdev_info;
-			struct ovsrec_netdevinfo *netdev_info;
-			enum ovsdb_idl_txn_status status;
-						
-			first_netdev_info = ovsrec_netdevinfo_first(idl);
-			if (first_netdev_info) {
-				VLOG_INFO("NetdevInfo already has a row.");
-				return;
-			} 
+				port = ovsrec_port_next(port)) {			
 			struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
 			netdev_info = ovsrec_netdevinfo_insert(txn);
 			VLOG_INFO("netdev: try to insert a row");
+
+			char *driver = discover_nic_dirver(port->name);
+			char *speed = discover_nic_speed(port->name);
+			ovsrec_netdevinfo_set_Driver(netdev_info, driver);
+			ovsrec_netdevinfo_set_Speed(netdev_info, speed);
+			ovsrec_netdevinfo_set_ports(netdev_info, port->name);
+
+			const char *Type = "Ethernet";
+			bool IsUserSpace = false;
+			int64_t NumaNode = 0;
+			ovsrec_netdevinfo_set_NumaNode(netdev_info, NumaNode);
+			ovsrec_netdevinfo_set_Type(netdev_info, Type);
+			ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);
+
+			status = ovsdb_idl_txn_commit_block(txn);
+			VLOG_INFO("set netdev_info");
+				
+			if (status != TXN_INCOMPLETE) { 
+				VLOG_INFO("netdev: txn is not incomplete.");
+				ovsdb_idl_txn_destroy(txn);
+				if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
+					if (status == TXN_SUCCESS) {
+						VLOG_INFO("netdev: txn success!");
+						netdev_last_success_seqno = ovsdb_idl_get_seqno(idl);
+						VLOG_INFO("netdev New success IDL seqno is %d", idl_seq);
+					} else {
+							VLOG_WARN("netdev failed: set netdev_info");
+					}
+				}
+			}
+
+			free(driver);
+		}
+		/*
+		for (int i = 0; i < 4; i++) {
+
 
 			
 			const char *Driver;
@@ -674,22 +791,7 @@ ovs_net_dev_run(void)
 			ovsrec_netdevinfo_set_Speed(netdev_info, Speed);
 			ovsrec_netdevinfo_set_Type(netdev_info, Type);
 				
-			status = ovsdb_idl_txn_commit_block(txn);
-			VLOG_INFO("set netdev_info");
-				
-			if (status != TXN_INCOMPLETE) { 
-				VLOG_INFO("netdev: txn is not incomplete.");
-				ovsdb_idl_txn_destroy(txn);
-				if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
-					if (status == TXN_SUCCESS) {
-						VLOG_INFO("netdev: txn success!");
-						netdev_last_success_seqno = ovsdb_idl_get_seqno(idl);
-						VLOG_INFO("netdev New success IDL seqno is %d", idl_seq);
-					} else {
-							VLOG_WARN("netdev failed: set netdev_info");
-					}
-				}
-			}
+
 		}*/
 	}
 }

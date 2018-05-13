@@ -62,6 +62,8 @@ void ovs_numa_dump_destroy(struct ovs_numa_dump *);
 int discover_cpu_number_per_numa_node(void);
 int64_t discover_memory_per_numa_node(void);
 char *discover_cpu_model(void);
+char *discover_nic_dirver(char *nic_name);
+char *discover_nic_speed(char *nic_name);
 
 void ovs_numa_info_init(const char *remote);
 void ovs_net_dev_init(void);
