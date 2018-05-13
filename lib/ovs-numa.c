@@ -602,7 +602,7 @@ discover_nic_speed(char *nic_name)
 			strcpy(nic_speed, "10000");
 			break;
 		case SPEED_40000:
-			strcpy(nic_speed, "10000");
+			strcpy(nic_speed, "40000");
 			break;
 
 		default:
