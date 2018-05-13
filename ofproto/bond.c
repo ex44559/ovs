@@ -1200,7 +1200,6 @@ aslb_nic_investigation(struct bond_slave *slave)
 		return -1;
 	}
 
-	/* TODO improve this: devname is unnecessary. */
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, slave->name);
 

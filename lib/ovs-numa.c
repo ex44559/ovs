@@ -36,6 +36,8 @@
 #include "connectivity.h"
 #include "ovsdb-idl.h"
 #include "vswitch-idl.h"
+#include "ovsdb-data.h"
+#include "dynamic-string.h"
 
 
 VLOG_DEFINE_THIS_MODULE(ovs_numa);
@@ -522,7 +524,6 @@ discover_cpu_model(void)
 	return cpu_model;
 }
 
-
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
 unsigned int issued_config_last_success_seqno, data_report_last_success_seqno;
@@ -612,8 +613,21 @@ ovs_net_dev_run(void)
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
 	if (idl_seq != netdev_last_success_seqno) {
-		int i = 0;
-		for (i = 0; i < 4; i++) {
+		const struct ovsrec_port *port;
+		
+		for (port = ovsrec_port_first(idl); port != NULL; 
+				port = ovsrec_port_next(port)) {
+			struct ds dyn_str;
+			char *port_name;
+			
+			const struct ovsdb_datum *res = ovsrec_port_get_name(port, OVSDB_TYPE_STRING);
+			ovsdb_atom_to_string(res->values, OVSDB_TYPE_STRING, &dyn_str);
+			port_name = dyn_str.string;
+
+			VLOG_INFO("ovs_net_dev_run port_name is %s", port_name);
+		}
+		/*
+		for (int i = 0; i < 4; i++) {
 			const struct ovsrec_netdevinfo *first_netdev_info;
 			struct ovsrec_netdevinfo *netdev_info;
 			enum ovsdb_idl_txn_status status;
@@ -673,7 +687,7 @@ ovs_net_dev_run(void)
 					}
 				}
 			}
-		}
+		}*/
 	}
 }
 
