@@ -537,12 +537,15 @@ discover_nic_dirver(char *nic_name)
 
 	char buffer[100];
 	int j = 0;
-	bool find = false;
+	bool find = false, pre_find = false;
 	char *nic_driver = xzalloc(100 * sizeof(char));
 	memset(buffer, 0, sizeof(buffer));
 	while (fgets(buffer, sizeof(buffer), pp) != NULL) {
-		for (int i = 0; i < sizeof(buffer); i++) {
-			if (buffer[i] == 'i') {
+		for (int i = 0; i < sizeof(buffer) && buffer[i] != '\n'; i++) {
+			if (buffer[i] == ':') {
+				pre_find = true;
+			}
+			if (buffer[i] == 'i' && pre_find) {
 				find = true;
 			}
 			if (find) {
@@ -720,7 +723,10 @@ ovs_net_dev_run(void)
 		} 
 		
 		for (port = ovsrec_port_first(idl); port != NULL; 
-				port = ovsrec_port_next(port)) {			
+				port = ovsrec_port_next(port)) {
+			if (strcmp(port->name, "ovsbr") == 0) {
+				continue;
+			}
 			struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
 			netdev_info = ovsrec_netdevinfo_insert(txn);
 			VLOG_INFO("netdev: try to insert a row");
