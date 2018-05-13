@@ -639,6 +639,7 @@ discover_nic_numa_node(char *nic_name)
 
 
 struct ovsdb_idl *idl;
+int last_net_dev_num;
 unsigned int last_success_seqno, netdev_last_success_seqno;
 unsigned int issued_config_last_success_seqno, data_report_last_success_seqno;
 
@@ -657,7 +658,10 @@ void
 ovs_net_dev_init(void) 
 {	
 	ovsdb_idl_add_table(idl, &ovsrec_table_port);
+	ovsdb_idl_add_table(idl, &ovsrec_table_netdevinfo);
 	ovsdb_idl_add_column(idl, &ovsrec_port_col_name);
+	ovsdb_idl_add_column(idl, &ovsrec_netdevinfo_col_ports);
+	ovsdb_idl_set_lock(idl, "netdev_info");
 }
 
 void
@@ -740,16 +744,22 @@ ovs_net_dev_run(void)
 		const struct ovsrec_netdevinfo *first_netdev_info;
 		struct ovsrec_netdevinfo *netdev_info;
 		enum ovsdb_idl_txn_status status;
-						
-		first_netdev_info = ovsrec_netdevinfo_first(idl);
-		if (first_netdev_info) {
-			VLOG_INFO("NetdevInfo already has a row.");
-			return;
-		} 
-		
+
+		int net_dev_count = 0;
 		for (port = ovsrec_port_first(idl); port != NULL; 
 				port = ovsrec_port_next(port)) {
+			net_dev_count++;
+		}
+
+		int i = 0;
+		for (port = ovsrec_port_first(idl); port != NULL; 
+				port = ovsrec_port_next(port)) {
+			if (i < last_net_dev_num) {
+				i++;
+				continue;
+			}
 			if (strcmp(port->name, "ovsbr") == 0) {
+				i++;
 				continue;
 			}
 			struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
@@ -794,6 +804,8 @@ ovs_net_dev_run(void)
 			}
 
 			free(driver);
+			i++;
+			last_net_dev_num = i;
 		}
 	}
 }
