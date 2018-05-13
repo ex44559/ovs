@@ -662,6 +662,7 @@ ovs_net_dev_init(void)
 	ovsdb_idl_add_column(idl, &ovsrec_port_col_name);
 	ovsdb_idl_add_column(idl, &ovsrec_netdevinfo_col_ports);
 	ovsdb_idl_set_lock(idl, "netdev_info");
+	last_net_dev_num = 1;
 }
 
 void
@@ -744,12 +745,6 @@ ovs_net_dev_run(void)
 		struct ovsrec_netdevinfo *netdev_info;
 		enum ovsdb_idl_txn_status status;
 
-		int net_dev_count = 0;
-		for (port = ovsrec_port_first(idl); port != NULL; 
-				port = ovsrec_port_next(port)) {
-			net_dev_count++;
-		}
-
 		int i = 0;
 		for (port = ovsrec_port_first(idl); port != NULL; 
 				port = ovsrec_port_next(port)) {
@@ -757,10 +752,7 @@ ovs_net_dev_run(void)
 				i++;
 				continue;
 			}
-			if (strcmp(port->name, "ovsbr") == 0) {
-				i++;
-				continue;
-			}
+			
 			struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
 			netdev_info = ovsrec_netdevinfo_insert(txn);
 			VLOG_INFO("netdev: try to insert a row");
