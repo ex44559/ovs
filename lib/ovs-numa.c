@@ -480,6 +480,7 @@ discover_cpu_number_per_numa_node(void)
 			cpu_count++;
 		}
 	}
+	close(fd);
 	return cpu_count;
 }
 
@@ -502,6 +503,7 @@ discover_memory_per_numa_node(void)
 			memsize = memsize * 10 + buffer[i] - '0';
 		}
 	}
+	close(fd);
 	return memsize;
 }
 
@@ -526,6 +528,7 @@ discover_cpu_model(void)
 			}
 		}
 	}
+	pclose(pp);
 	return cpu_model;
 }
 
@@ -554,6 +557,7 @@ discover_nic_dirver(char *nic_name)
 		}
 	}
 	free(cmd);
+	pclose(pp);
 	return nic_driver;
 }
 
@@ -612,6 +616,27 @@ discover_nic_speed(char *nic_name)
 	close(sock);
 	return nic_speed;
 }
+
+int64_t
+discover_nic_numa_node(char *nic_name) 
+{
+	char *cmd = xasprintf("cat /sys/class/net/%s/device/numa_node", nic_name);
+	FILE *pp = popen(cmd, "r");
+
+	char buffer[100];
+	int64_t numa_node = 0;
+	memset(buffer, 0, sizeof(buffer));
+	while (fgets(buffer, sizeof(buffer), pp) != NULL) {
+		for (int i = 0; i < sizeof(buffer) && buffer[i] != '\n'; i++) {
+			numa_node = numa_node * 10 + buffer[i] - '0';
+		}
+	}
+
+	pclose(pp);
+	return numa_node;
+}
+
+
 
 struct ovsdb_idl *idl;
 unsigned int last_success_seqno, netdev_last_success_seqno;
@@ -737,9 +762,16 @@ ovs_net_dev_run(void)
 			ovsrec_netdevinfo_set_Speed(netdev_info, speed);
 			ovsrec_netdevinfo_set_ports(netdev_info, port->name);
 
-			const char *Type = "Ethernet";
-			bool IsUserSpace = false;
-			int64_t NumaNode = 0;
+			const char *Type;
+			bool IsUserSpace;
+			if (strcmp(driver, "0")) {
+				Type = "Ethernet";
+				IsUserSpace = false;
+			} else {
+				Type = "Other";
+				IsUserSpace = true;
+			}
+			int64_t NumaNode = discover_nic_numa_node(port->name);
 			ovsrec_netdevinfo_set_NumaNode(netdev_info, NumaNode);
 			ovsrec_netdevinfo_set_Type(netdev_info, Type);
 			ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);
@@ -763,42 +795,6 @@ ovs_net_dev_run(void)
 
 			free(driver);
 		}
-		/*
-		for (int i = 0; i < 4; i++) {
-
-
-			
-			const char *Driver;
-			if (i == 0 || i == 1)
-				Driver = "i40e";
-			else
-				Driver = "ixgbe";
-			bool IsUserSpace = false;
-			int64_t NumaNode = 0;
-			const char *ports;
-			if (i == 0)
-				ports = "0754a7d8-484b-45d2-b648-874666f731e9";
-			else if (i == 1)
-				ports = "2a74fd6c-f00d-478b-b606-8affea411a93";
-			else if (i == 2)
-				ports = "3a914357-0720-485c-8637-4d352988ce13";
-			else
-				ports = "2c8c753f-796e-4c85-80a6-4039a5a7aef4";
-			const char *Speed;
-			if (i == 2 || i == 3) 
-				Speed = "10000";
-			else
-				Speed = "40000";
-			const char *Type = "Ethernet";
-			ovsrec_netdevinfo_set_Driver(netdev_info, Driver);
-			ovsrec_netdevinfo_set_IsUserSpace(netdev_info, IsUserSpace);
-			ovsrec_netdevinfo_set_NumaNode(netdev_info, NumaNode);
-			ovsrec_netdevinfo_set_ports(netdev_info, ports);
-			ovsrec_netdevinfo_set_Speed(netdev_info, Speed);
-			ovsrec_netdevinfo_set_Type(netdev_info, Type);
-				
-
-		}*/
 	}
 }
 
@@ -814,7 +810,7 @@ ovs_issued_config_run(void)
 	}
 	
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
-	VLOG_INFO("netdev IDL seqno is %d", idl_seq);
+	VLOG_INFO("issued config IDL seqno is %d", idl_seq);
 	if (idl_seq != issued_config_last_success_seqno) {
 		const struct ovsrec_issuedconfig *first_issuedconfig;
 		struct ovsrec_issuedconfig *issuedconfig_info;
