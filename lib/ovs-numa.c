@@ -652,6 +652,7 @@ ovs_numa_info_init(const char *remote)
 	ovsdb_idl_add_column(idl, &ovsrec_hardwareinfo_col_NumaNodeNum);
 	ovsdb_idl_set_lock(idl, "hardware_info");
 	ovs_net_dev_init();
+	ovs_issued_config_init();
 }
 
 void 
@@ -662,6 +663,12 @@ ovs_net_dev_init(void)
 	ovsdb_idl_add_column(idl, &ovsrec_port_col_name);
 	ovsdb_idl_add_column(idl, &ovsrec_netdevinfo_col_ports);
 	ovsdb_idl_set_lock(idl, "netdev_info");
+}
+
+void
+ovs_issued_config_init(void)
+{
+	ovsdb_idl_add_table(idl, &ovsrec_table_issuedconfig);
 }
 
 void
@@ -829,6 +836,11 @@ ovs_net_dev_run(void)
 	}
 }
 
+void ovs_issued_config_run(void) 
+{
+	
+}
+/*
 void 
 ovs_issued_config_run(void)
 {
@@ -884,7 +896,7 @@ ovs_issued_config_run(void)
 			}
 		}
 	}
-}
+}*/
 
 void 
 ovs_data_report_run(void)
