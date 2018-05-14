@@ -278,6 +278,8 @@ lib_libopenvswitch_la_SOURCES = \
 	lib/vlandev.c \
 	lib/vlandev.h \
 	lib/vlog.c \
+	lib/ovs-dm.c \
+	lib/ovs-dm.h \
 	lib/lldp/aa-structs.h \
 	lib/lldp/lldp.c \
 	lib/lldp/lldp-const.h \
@@ -285,7 +287,7 @@ lib_libopenvswitch_la_SOURCES = \
 	lib/lldp/lldpd.c \
 	lib/lldp/lldpd.h \
 	lib/lldp/lldpd-structs.c \
-	lib/lldp/lldpd-structs.h
+	lib/lldp/lldpd-structs.h 
 
 if WIN32
 lib_libopenvswitch_la_SOURCES += \

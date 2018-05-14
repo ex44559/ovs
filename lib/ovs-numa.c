@@ -43,6 +43,7 @@
 #include "vswitch-idl.h"
 #include "ovsdb-data.h"
 #include "dynamic-string.h"
+#include "ovs-dm.h"
 
 
 VLOG_DEFINE_THIS_MODULE(ovs_numa);
@@ -843,13 +844,12 @@ ovs_net_dev_run(void)
 	}
 }
 
+bool ConfigError = false;
+bool isAlbMode = true;
+bool setProcessSuccess = true;
+char *ErrorMessage = "";
+
 void ovs_issued_config_run(void) 
-{
-	
-}
-/*
-void 
-ovs_issued_config_run(void)
 {
 	ovsdb_idl_run(idl);
 		
@@ -862,48 +862,24 @@ ovs_issued_config_run(void)
 	unsigned int idl_seq = ovsdb_idl_get_seqno(idl);
 	VLOG_INFO("issued config IDL seqno is %d", idl_seq);
 	if (idl_seq != issued_config_last_success_seqno) {
-		const struct ovsrec_issuedconfig *first_issuedconfig;
-		struct ovsrec_issuedconfig *issuedconfig_info;
-		enum ovsdb_idl_txn_status status;
-						
-		first_issuedconfig = ovsrec_issuedconfig_first(idl);
-		if (first_issuedconfig) {
-			VLOG_INFO("issued config already has a row.");
-			return;
-		} 
-		struct ovsdb_idl_txn *txn = ovsdb_idl_txn_create(idl);
-		issuedconfig_info = ovsrec_issuedconfig_insert(txn);
-		VLOG_INFO("issued config: try to insert a row");
+		const struct ovsrec_issuedconfig *config;
 
-		bool configChanged = true;
-		bool isAlbMode = false;
-		bool IsFallbackMode = true;
-		bool IsUserConfigMode = false;
-		int64_t ProcessToNode = 0;
-		ovsrec_issuedconfig_set_configChanged(issuedconfig_info, configChanged);
-		ovsrec_issuedconfig_set_isAlbMode(issuedconfig_info, isAlbMode);
-		ovsrec_issuedconfig_set_IsFallbackMode(issuedconfig_info, IsFallbackMode);
-		ovsrec_issuedconfig_set_IsUserConfigMode(issuedconfig_info, IsUserConfigMode);
-		ovsrec_issuedconfig_set_ProcessToNode(issuedconfig_info, ProcessToNode);
-				
-		status = ovsdb_idl_txn_commit_block(txn);
-		VLOG_INFO("set issued config");
-				
-		if (status != TXN_INCOMPLETE) { 
-			VLOG_INFO("issued config: txn is not incomplete.");
-			ovsdb_idl_txn_destroy(txn);
-			if (status == TXN_SUCCESS || status == TXN_UNCHANGED) {
-				if (status == TXN_SUCCESS) {
-					VLOG_INFO("issued config: txn success!");
-					issued_config_last_success_seqno = ovsdb_idl_get_seqno(idl);
-					VLOG_INFO("issued config New success IDL seqno is %d", idl_seq);
-				} else {
-					VLOG_WARN("issued config failed: set netdev_info");
-				}
+		for (config = ovsrec_issuedconfig_first(idl); config != NULL; 
+				config = ovsrec_issuedconfig_next(config)) {
+			isAlbMode = config->isAlbMode;
+			if (config->isAlbMode) {
+				ovs_dm_set_alb_mode();
+			} else {
+				ovs_dm_set_none_alb_mode();
+			}
+
+			setProcessSuccess = ovs_dm_process_to_node(config->ProcessToNode);
+			if (setProcessSuccess == false) {
+				ErrorMessage = ovs_dm_get_error_message();
 			}
 		}
 	}
-}*/
+}
 
 void 
 ovs_data_report_run(void)
@@ -932,10 +908,6 @@ ovs_data_report_run(void)
 		dataReport_info = ovsrec_datareport_insert(txn);
 		VLOG_INFO("data report: try to insert a row");
 
-		bool ConfigError = false;
-		bool isAlbMode = true;
-		bool setProcessSuccess = true;
-		const char *ErrorMessage = "";
 		ovsrec_datareport_set_ConfigError(dataReport_info, ConfigError);
 		ovsrec_datareport_set_isAlbMode(dataReport_info, isAlbMode);
 		ovsrec_datareport_set_setProcessSuccess(dataReport_info, setProcessSuccess);
