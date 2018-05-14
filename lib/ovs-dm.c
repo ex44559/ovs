@@ -1,3 +1,4 @@
+#include <config.h>
 #include "ovs-dm.h"
 #include "openvswitch/vlog.h"
 #include <stdbool.h>
