@@ -653,6 +653,7 @@ ovs_numa_info_init(const char *remote)
 	ovsdb_idl_set_lock(idl, "hardware_info");
 	ovs_net_dev_init();
 	ovs_issued_config_init();
+	ovs_data_report_init();
 }
 
 void 
@@ -669,6 +670,12 @@ void
 ovs_issued_config_init(void)
 {
 	ovsdb_idl_add_table(idl, &ovsrec_table_issuedconfig);
+}
+
+void
+ovs_data_report_init(void)
+{
+	ovsdb_idl_add_table(idl, &ovsrec_table_datareport);
 }
 
 void
@@ -925,10 +932,10 @@ ovs_data_report_run(void)
 		dataReport_info = ovsrec_datareport_insert(txn);
 		VLOG_INFO("data report: try to insert a row");
 
-		bool ConfigError = true;
+		bool ConfigError = false;
 		bool isAlbMode = true;
-		bool setProcessSuccess = false;
-		const char *ErrorMessage = "CPU_ALLOC error";
+		bool setProcessSuccess = true;
+		const char *ErrorMessage = "";
 		ovsrec_datareport_set_ConfigError(dataReport_info, ConfigError);
 		ovsrec_datareport_set_isAlbMode(dataReport_info, isAlbMode);
 		ovsrec_datareport_set_setProcessSuccess(dataReport_info, setProcessSuccess);
