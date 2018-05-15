@@ -26,7 +26,7 @@ void ovs_dm_set_alb_mode(void) {
 }
 
 void ovs_dm_set_none_alb_mode(void) {
-	char *cmd = xasprintf("ovs-vsctl set port bond0 bond_mode=balance-ab");
+	char *cmd = xasprintf("ovs-vsctl set port bond0 bond_mode=active-backup");
 	FILE *pp = popen(cmd, "r");
 
 	char buffer[200];
