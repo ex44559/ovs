@@ -671,6 +671,7 @@ void
 ovs_issued_config_init(void)
 {
 	ovsdb_idl_add_table(idl, &ovsrec_table_issuedconfig);
+	ovsdb_idl_add_column(idl, &ovsrec_port_col_bond_mode);
 }
 
 void
