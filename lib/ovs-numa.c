@@ -462,6 +462,7 @@ ovs_numa_set_cpu_mask(const char *cmask)
     }
 }
 
+/*收集NUMA节点内的CPU信息*/
 int 
 discover_cpu_number_per_numa_node(void) 
 {
@@ -485,6 +486,7 @@ discover_cpu_number_per_numa_node(void)
 	return cpu_count;
 }
 
+/*收集NUMA节点的内存信息*/
 int64_t
 discover_memory_per_numa_node(void) 
 {
@@ -508,6 +510,7 @@ discover_memory_per_numa_node(void)
 	return memsize;
 }
 
+/*收集CPU型号信息*/
 char *
 discover_cpu_model(void)
 {
@@ -533,6 +536,7 @@ discover_cpu_model(void)
 	return cpu_model;
 }
 
+/*收集网卡驱动信息*/
 char *
 discover_nic_dirver(char *nic_name) 
 {
@@ -562,6 +566,7 @@ discover_nic_dirver(char *nic_name)
 	return nic_driver;
 }
 
+/*收集网卡速率信息*/
 char *
 discover_nic_speed(char *nic_name) 
 {
@@ -618,6 +623,7 @@ discover_nic_speed(char *nic_name)
 	return nic_speed;
 }
 
+/*收集网卡与NUMA节点对应关系*/
 int64_t
 discover_nic_numa_node(char *nic_name) 
 {
@@ -637,13 +643,12 @@ discover_nic_numa_node(char *nic_name)
 	return numa_node;
 }
 
-
-
 struct ovsdb_idl *idl;
 int last_net_dev_num;
 unsigned int last_success_seqno, netdev_last_success_seqno;
 unsigned int issued_config_last_success_seqno, data_report_last_success_seqno;
 
+/*初始化NUMA信息模块，初始化IDL数据结构*/
 void 
 ovs_numa_info_init(const char *remote) 
 {	
@@ -657,6 +662,7 @@ ovs_numa_info_init(const char *remote)
 	ovs_data_report_init();
 }
 
+/*初始化网络设备信息模块*/
 void 
 ovs_net_dev_init(void) 
 {	
@@ -667,6 +673,7 @@ ovs_net_dev_init(void)
 	ovsdb_idl_set_lock(idl, "netdev_info");
 }
 
+/*初始化配置信息表*/
 void
 ovs_issued_config_init(void)
 {
@@ -677,12 +684,14 @@ ovs_issued_config_init(void)
 	ovsdb_idl_add_column(idl, &ovsrec_issuedconfig_col_configChanged);
 }
 
+/*初始化反馈信息模块*/
 void
 ovs_data_report_init(void)
 {
 	ovsdb_idl_add_table(idl, &ovsrec_table_datareport);
 }
 
+/*感知NUMA信息并写入OVSDB的HardwareInfo表中*/
 void
 ovs_numa_info_run(void) 
 {
@@ -722,8 +731,7 @@ ovs_numa_info_run(void)
 		ovsrec_hardwareinfo_set_CorePerNumaNode(hardware_info, CorePerNumaNode);
 		ovsrec_hardwareinfo_set_MemoryPerNumaNode(hardware_info, MemoryPerNumaNode);
 		ovsrec_hardwareinfo_set_CPUType(hardware_info, CPUType);
-
-		
+	
 		status = ovsdb_idl_txn_commit_block(txn);
 		VLOG_INFO("set hardware_info numa node number");
 		
@@ -745,6 +753,7 @@ ovs_numa_info_run(void)
 	
 }
 
+/*感知网络设备信息并写入NetdevInfo表中*/
 void 
 ovs_net_dev_run(void)
 {
@@ -853,6 +862,7 @@ bool isAlbMode = true;
 bool setProcessSuccess = true;
 char *ErrorMessage = "";
 
+/*获取控制器下发的配置并应用这些配置*/
 void ovs_issued_config_run(void) 
 {
 	ovsdb_idl_run(idl);
@@ -884,6 +894,7 @@ void ovs_issued_config_run(void)
 	}
 }
 
+/*将程序执行结果写入负责反馈信息的dataReport表中*/
 void 
 ovs_data_report_run(void)
 {

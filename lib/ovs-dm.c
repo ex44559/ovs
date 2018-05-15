@@ -76,13 +76,13 @@ void ovs_dm_set_none_alb_mode(struct ovsdb_idl *idl) {
 }
 
 bool ovs_dm_process_to_node(int processToNode) {
-	char *node_cpulist_path = xasprintf("/sys/devices/system/node/node%d/cpulist", processToNode);
+	char *node_cpulist_path = xasprintf("/sys/devices/system/node/node2/cpulist");
 	int cpulist_fd = open(node_cpulist_path, O_RDONLY);
 
 	char buffer[200];
 	memset(buffer, 0, sizeof(buffer));
 	if (read(cpulist_fd, buffer, sizeof(buffer)) < 0) {
-		VLOG_WARN("cannot read /sys/devices/system/node/node/cpulist");
+		VLOG_WARN("cannot read /sys/devices/system/node/node%d/cpulist", processToNode);
 		return false;
 	}
 
