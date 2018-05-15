@@ -1,6 +1,7 @@
 #include <config.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include "ovs-dm.h"
 #include "openvswitch/vlog.h"
 #include "util.h"
@@ -16,10 +17,11 @@ void ovs_dm_set_alb_mode(void) {
 	FILE *pp = popen(cmd, "r");
 
 	char buffer[200];
+	memset(buffer, 0, sizeof(buffer));
 	if (fgets(buffer, sizeof(buffer), pp) != NULL) {
 		strcpy(errorMsg, buffer);
 	}
-	
+	VLOG_INFO("ovs_dm_set_alb_mode res is %s", errorMsg);
 	return;
 }
 
