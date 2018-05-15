@@ -870,7 +870,7 @@ void ovs_issued_config_run(void)
 			if (isAlbMode) {
 				ovs_dm_set_alb_mode(idl);
 			} else {
-				ovs_dm_set_none_alb_mode();
+				ovs_dm_set_none_alb_mode(idl);
 			}
 
 			setProcessSuccess = ovs_dm_process_to_node(config->ProcessToNode);
