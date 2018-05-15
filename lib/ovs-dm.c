@@ -30,9 +30,11 @@ void ovs_dm_set_none_alb_mode(void) {
 	FILE *pp = popen(cmd, "r");
 
 	char buffer[200];
+	memset(buffer, 0, sizeof(buffer));
 	if (fgets(buffer, sizeof(buffer), pp) != NULL) {
 		strcpy(errorMsg, buffer);
 	}
+	VLOG_INFO("ovs_dm_set_none_alb_mode res is %s", errorMsg);
 	return;
 
 }
