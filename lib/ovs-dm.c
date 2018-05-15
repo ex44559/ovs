@@ -96,13 +96,14 @@ bool ovs_dm_process_to_node(int processToNode) {
 	
 	pid_t pid = getpid();
 	VLOG_INFO("pid is %d, cpulist is %s", (int)pid, cpus);
-	char *cpuset_path = xasprintf("/proc/%d/cpuset", (int)pid);
-	int cpuset_fd = open(cpuset_path, O_WRONLY);
-	if (write(cpuset_fd, cpus, j - 1) < 0) {
-		VLOG_WARN("cannot write proc cpuset");
-		return false;
+	char *cmd = xasprintf("echo %d > /sys/fs/cgroup/cpuset/ovs/tasks", (int)pid);
+	FILE *pp = popen(cmd, "r");
+	char another_buffer[200];
+	memset(another_buffer, 0, sizeof(another_buffer));
+	while (fgets(another_buffer, sizeof(another_buffer), pp) != NULL) {
+		VLOG_INFO("ovs_dm_process_to_node result is %s", another_buffer);
 	}
-	
+
 	return true;
 }
 
