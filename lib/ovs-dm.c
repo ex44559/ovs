@@ -12,18 +12,19 @@ VLOG_DEFINE_THIS_MODULE(ovs_dm);
 char errorMsg[200];
 
 void ovs_dm_set_alb_mode(void) {
-	char *cmd = xasprintf("ovs-vsctl set port bond0 bond_mode=balance-aslb");
+	char *cmd = xasprintf("ovs-vsctl set port bond0 bond_mode=balance-slb");
 	FILE *pp = popen(cmd, "r");
 
 	char buffer[200];
 	if (fgets(buffer, sizeof(buffer), pp) != NULL) {
 		strcpy(errorMsg, buffer);
 	}
+	
 	return;
 }
 
 void ovs_dm_set_none_alb_mode(void) {
-	char *cmd = xasprintf("ovs-vsctl set port bond0 bond_mode=balance-slb");
+	char *cmd = xasprintf("ovs-vsctl set port bond0 bond_mode=balance-ab");
 	FILE *pp = popen(cmd, "r");
 
 	char buffer[200];
