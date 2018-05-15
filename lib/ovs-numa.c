@@ -866,10 +866,8 @@ void ovs_issued_config_run(void)
 
 		for (config = ovsrec_issuedconfig_first(idl); config != NULL; 
 				config = ovsrec_issuedconfig_next(config)) {
-			isAlbMode = config->isAlbMode;
-			VLOG_INFO("isAlbMode %d", config->isAlbMode);
-			if (config->isAlbMode) {
-				ovs_dm_set_alb_mode();
+			if (isAlbMode) {
+				ovs_dm_set_alb_mode(idl);
 			} else {
 				ovs_dm_set_none_alb_mode();
 			}
